@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aurcore Project Booking System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{ --bg:#f6f7f9;--card:#fff;--text:#1a1d23;--muted:#6b7280;--border:#e3e5e9;--accent:#0b5fff;--ink:#fff;--ok:#1a8a4c;--warn:#b7791f;--bad:#c0392b; color-scheme:light;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
+.wrap{max-width:900px;margin:0 auto;padding:16px;}
+h1{font-size:19px;margin:14px 0 2px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:14px;}
+.tabs{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+.tab{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;}
+.tab.active{background:var(--accent);color:var(--ink);border-color:var(--accent);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px;}
+input,select,textarea{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;}
+textarea{min-height:56px;resize:vertical;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (max-width:560px){.row{grid-template-columns:1fr;}}
+button{cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;}
+.btn-primary{background:var(--accent);color:var(--ink);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-sm{padding:6px 10px;font-size:12.5px;}
+.msg{font-size:13px;padding:10px;border-radius:8px;margin-top:10px;}
+.msg.ok{background:rgba(26,138,76,.12);color:var(--ok);}
+.msg.bad{background:rgba(192,57,41,.12);color:var(--bad);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+th{color:var(--muted);font-weight:600;font-size:12px;}
+.scrollx{overflow-x:auto;}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.line-item{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center;}
+@media (max-width:560px){.line-item{grid-template-columns:1fr;}}
+.hint{font-size:12px;color:var(--muted);margin-top:4px;}
+#loginScreen{max-width:420px;margin:60px auto;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="display:none;">
+<h1>Aurcore Project Booking System</h1>
+<div class="sub">EAVN · Đăng ký dự án &amp; theo dõi phê duyệt — xin chào <span id="whoami"></span></div>
+<div class="tabs">
+  <div class="tab active" id="tabForm" onclick="showView('form')">Đăng ký dự án</div>
+  <div class="tab" id="tabAdmin" style="display:none" onclick="showView('admin')">Quản trị</div>
+  <button class="btn-ghost btn-sm" style="margin-left:auto" onclick="logout()">Đăng xuất</button>
+</div>
+
+<div id="viewForm">
+  <div class="card">
+    <div class="row">
+      <div><label>Công ty đối tác (Reseller) *</label><input id="f_company"></div>
+      <div><label>Người đăng ký *</label><input id="f_contact"></div>
+    </div>
+    <div class="row">
+      <div><label>Khách hàng cuối *</label><input id="f_customer"></div>
+      <div><label>Ngành / Industry</label><input id="f_industry"></div>
+    </div>
+    <label>Tên dự án *</label><input id="f_project">
+    <label>Mô tả / yêu cầu kỹ thuật</label><textarea id="f_desc"></textarea>
+    <div class="row">
+      <div><label>Giá trị ước tính (USD)</label><input id="f_value" type="number"></div>
+      <div><label>Ngày dự kiến chốt</label><input id="f_close" type="date"></div>
+    </div>
+    <label>Đối thủ cạnh tranh (nếu có)</label><input id="f_competitor">
+    <label>Model Aurcore &amp; số lượng *</label>
+    <div id="lineItems"></div>
+    <button class="btn-ghost btn-sm" onclick="addLine()">+ Thêm model</button>
+    <div style="margin-top:16px;"><button class="btn-primary" onclick="submitForm()">Gửi đăng ký</button></div>
+    <div id="formMsg"></div>
+  </div>
+</div>
+
+<div id="viewAdmin" style="display:none;">
+  <div class="card">
+    <div class="toolbar">
+      <button class="btn-ghost" onclick="loadSubmissions()">Tải lại</button>
+      <button class="btn-primary" onclick="exportExcel()">Xuất Excel</button>
+    </div>
+    <div class="scrollx"><table id="subTable"><thead><tr>
+      <th>Ngày</th><th>Đối tác</th><th>Khách hàng</th><th>Dự án</th><th>Model/SL</th><th>Giá trị</th><th>Trạng thái</th><th>Ghi chú NB</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+</div>
+
+<div class="wrap" id="loginScreen">
+  <div class="card">
+    <h1 style="margin-top:0;">Aurcore Project Booking System</h1>
+    <div class="sub">Đăng nhập bằng email công ty của bạn</div>
+
+    <div id="stepEmail">
+      <label>Email</label><input id="loginEmail" type="email" placeholder="ban@congty.com">
+      <div style="margin-top:12px;"><button class="btn-primary" onclick="requestOtp()">Gửi mã xác thực</button></div>
+    </div>
+
+    <div id="stepOtp" style="display:none;">
+      <div class="hint">Mã xác thực đã gửi tới <b id="otpEmailShown"></b>. Kiểm tra hộp thư (và mục Spam).</div>
+      <label>Nhập mã 6 số</label><input id="otpCode" inputmode="numeric" maxlength="6" placeholder="------">
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button class="btn-primary" onclick="verifyOtp()">Xác nhận</button>
+        <button class="btn-ghost" onclick="backToEmail()">Đổi email</button>
+      </div>
+    </div>
+
+    <div id="loginMsg"></div>
+  </div>
+</div>
+
+<script>
+// ====== CẤU HÌNH — DÁN WEB APP URL CỦA APPS SCRIPT VÀO ĐÂY SAU KHI DEPLOY ======
+const CONFIG = { API_URL: 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' };
+// ===============================================================================
+
+const PRODUCTS = {
+  'Campus / Enterprise (AES2xxx, AES4xxx)': ['AES2001','AES2001P','AES2002','AES2002P','AES2003','AES2003P','AES2010P','AES2011P','AES2012P','AES4001','AES4001P','AES4002','AES4002P','AES4010','AES4101','AES4101P','AES4102','AES4102P','AES4201','AES4202'],
+  'Data Center (AES6xxx, AES8xxx, AES9xxx)': ['AES6001','AES6002','AES6003','AES6004','AES6005','AES6006','AES6101','AES6102','AES6103','AES6104','AES6201','AES6202','AES8001','AES8002','AES8005','AES9001'],
+  'Industrial (AIS2xxx, AIS4xxx)': ['AIS2001','AIS2001P','AIS2002','AIS2002P','AIS2003','AIS2003P','AIS2004','AIS2004P','AIS4001','AIS4001P']
+};
+
+let session = null; // {email, token, role, name}
+let allSubs = [];
+let pendingEmail = '';
+
+function productOptionsHTML(){
+  let html = '<option value="">-- Chọn model --</option>';
+  for (const group in PRODUCTS){
+    html += `<optgroup label="${group}">`;
+    PRODUCTS[group].forEach(m=> html += `<option value="${m}">${m}</option>`);
+    html += '</optgroup>';
+  }
+  return html;
+}
+
+function addLine(){
+  const div = document.createElement('div'); div.className='line-item';
+  div.innerHTML = `<select class="li-model">${productOptionsHTML()}</select>
+    <input class="li-qty" type="number" min="1" placeholder="Số lượng">
+    <button class="btn-ghost btn-sm" onclick="this.parentElement.remove()">Xoá</button>`;
+  document.getElementById('lineItems').appendChild(div);
+}
+
+async function api(payload){
+  const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(payload) });
+  return res.json(https://script.google.com/macros/s/AKfycbylRbyGwuSnbytyQYVklc4f8rU4fqxTxVIPoPSP2s2wF_KGpihromI1fqVpw-3IsZ8n/exec);
+}
+
+async function requestOtp(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const msg = document.getElementById('loginMsg');
+  if (!email){ msg.innerHTML='<div class="msg bad">Vui lòng nhập email.</div>'; return; }
+  msg.innerHTML = '<div class="hint">Đang gửi mã…</div>';
+  try{
+    const r = await api({action:'requestOtp', email});
+    if (r.ok){
+      pendingEmail = email;
+      document.getElementById('otpEmailShown').textContent = email;
+      document.getElementById('stepEmail').style.display='none';
+      document.getElementById('stepOtp').style.display='';
+      msg.innerHTML='';
+    }else{
+      msg.innerHTML = `<div class="msg bad">${r.error||'Không gửi được mã.'}</div>`;
+    }
+  }catch(e){ msg.innerHTML = '<div class="msg bad">Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.</div>'; }
+}
+
+function backToEmail(){
+  document.getElementById('stepOtp').style.display='none';
+  document.getElementById('stepEmail').style.display='';
+  document.getElementById('loginMsg').innerHTML='';
+}
+
+async function verifyOtp(){
+  const otp = document.getElementById('otpCode').value.trim();
+  const msg = document.getElementById('loginMsg');
+  if (!otp){ msg.innerHTML='<div class="msg bad">Vui lòng nhập mã xác thực.</div>'; return; }
+  msg.innerHTML = '<div class="hint">Đang xác thực…</div>';
+  try{
+    const r = await api({action:'verifyOtp', email:pendingEmail, otp});
+    if (r.ok){
+      session = {email:pendingEmail, token:r.token, role:r.role, name:r.name};
+      sessionStorage.setItem('pbs_session', JSON.stringify(session));
+      enterApp();
+    }else{
+      msg.innerHTML = `<div class="msg bad">${r.error||'Mã không đúng.'}</div>`;
+    }
+  }catch(e){ msg.innerHTML = '<div class="msg bad">Lỗi kết nối tới hệ thống.</div>'; }
+}
+
+function logout(){ sessionStorage.removeItem('pbs_session'); session=null; location.reload(); }
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='';
+  document.getElementById('whoami').textContent = session.name ? `${session.name} (${session.email})` : session.email;
+  if (session.role === 'Admin') document.getElementById('tabAdmin').style.display='';
+  if (!document.getElementById('lineItems').children.length) addLine();
+}
+
+function showView(v){
+  document.getElementById('tabForm').classList.toggle('active', v==='form');
+  document.getElementById('tabAdmin').classList.toggle('active', v==='admin');
+  document.getElementById('viewForm').style.display = v==='form' ? '' : 'none';
+  document.getElementById('viewAdmin').style.display = v==='admin' ? '' : 'none';
+  if (v==='admin') loadSubmissions();
+}
+
+function readForm(){
+  const v=id=>document.getElementById(id).value.trim();
+  const lines = Array.from(document.querySelectorAll('.line-item')).map(el=>{
+    const m = el.querySelector('.li-model').value, q = el.querySelector('.li-qty').value;
+    return m ? `${m} x${q||1}` : null;
+  }).filter(Boolean);
+  return {
+    company:v('f_company'), contact:v('f_contact'), phone:'',
+    customer:v('f_customer'), industry:v('f_industry'), project:v('f_project'), desc:v('f_desc'),
+    value:v('f_value'), close:v('f_close'), competitor:v('f_competitor'), products: lines.join(', ')
+  };
+}
+
+function validate(d){
+  const req=['company','contact','customer','project','products'];
+  for (const k of req) if (!d[k]) return false;
+  return true;
+}
+
+async function submitForm(){
+  const msg = document.getElementById('formMsg');
+  const data = readForm();
+  if (!validate(data)){ msg.innerHTML='<div class="msg bad">Vui lòng điền đủ các trường có dấu * và chọn ít nhất 1 model.</div>'; return; }
+  msg.innerHTML = '<div class="hint">Đang gửi…</div>';
+  try{
+    const r = await api(Object.assign({action:'submit', email:session.email, token:session.token}, data));
+    if (r.ok){
+      msg.innerHTML = '<div class="msg ok">Đã gửi đăng ký thành công. EAVN sẽ xem xét và cập nhật trạng thái.</div>';
+      ['f_company','f_contact','f_customer','f_industry','f_project','f_desc','f_value','f_close','f_competitor'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('lineItems').innerHTML=''; addLine();
+    }else{
+      msg.innerHTML = `<div class="msg bad">${r.error||'Gửi thất bại.'}</div>`;
+    }
+  }catch(e){ msg.innerHTML = '<div class="msg bad">Lỗi kết nối tới hệ thống.</div>'; }
+}
+
+async function loadSubmissions(){
+  try{
+    const r = await api({action:'list', email:session.email, token:session.token});
+    if (r.ok){ allSubs = r.rows; renderTable(); }
+  }catch(e){}
+}
+
+function renderTable(){
+  const tbody = document.querySelector('#subTable tbody'); tbody.innerHTML='';
+  allSubs.slice().reverse().forEach(s=>{
+    const tr = document.createElement('tr');
+    const date = s.Timestamp ? new Date(s.Timestamp).toISOString().slice(0,10) : '';
+    tr.innerHTML = `<td>${date}</td><td>${esc(s.CongTyDoiTac)}<br><span class="hint">${esc(s.NguoiDangKy)}</span></td>
+      <td>${esc(s.KhachHangCuoi)}</td><td>${esc(s.TenDuAn)}</td><td>${esc(s.ModelSoLuong)}</td>
+      <td>${esc(s.GiaTriUocTinh)}</td><td></td><td></td>`;
+    const sel = document.createElement('select');
+    ['Submitted','UnderReview','Approved','Rejected'].forEach(opt=>{
+      const o=document.createElement('option'); o.value=opt; o.textContent=opt; if ((s.TrangThai||'Submitted')===opt) o.selected=true; sel.appendChild(o);
+    });
+    const noteInput = document.createElement('input'); noteInput.value = s.GhiChuNoiBo||''; noteInput.placeholder='Ghi chú nội bộ';
+    const save = ()=>updateStatus(s.ID, sel.value, noteInput.value);
+    sel.onchange = save; noteInput.onblur = save;
+    tr.children[6].appendChild(sel); tr.children[7].appendChild(noteInput);
+    tbody.appendChild(tr);
+  });
+}
+
+async function updateStatus(id, status, note){
+  try{ await api({action:'updateStatus', email:session.email, token:session.token, id, status, note}); loadSubmissions(); }catch(e){}
+}
+
+function esc(v){ return (v==null?'':String(v)).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+function exportExcel(){
+  const rows = allSubs.map(s=>({
+    NgayDangKy: s.Timestamp ? new Date(s.Timestamp).toISOString().slice(0,10) : '',
+    CongTyDoiTac:s.CongTyDoiTac, NguoiDangKy:s.NguoiDangKy, Email:s.Email,
+    KhachHangCuoi:s.KhachHangCuoi, Nganh:s.Nganh, TenDuAn:s.TenDuAn, MoTa:s.MoTa,
+    GiaTriUocTinh:s.GiaTriUocTinh, NgayDuKienChot:s.NgayDuKienChot, DoiThu:s.DoiThu,
+    ModelSoLuong:s.ModelSoLuong, TrangThai:s.TrangThai, GhiChuNoiBo:s.GhiChuNoiBo
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PBS');
+  XLSX.writeFile(wb, 'Aurcore_PBS_Export.xlsx');
+}
+
+(function init(){
+  const saved = sessionStorage.getItem('pbs_session');
+  if (saved){ session = JSON.parse(saved); enterApp(); document.getElementById('loginScreen').style.display='none'; }
+})();
+</script>
+</body>
+</html>

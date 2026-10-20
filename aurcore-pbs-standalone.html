@@ -185,9 +185,21 @@ function addLine(){
   document.getElementById('lineItems').appendChild(div);
 }
 
+function configOk(){ return CONFIG.API_URL && CONFIG.API_URL.indexOf('https://script.google') === 0; }
+
 async function api(payload){
+  if (!configOk()) throw new Error('CONFIG_MISSING');
   const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(payload) });
   return res.json();
+}
+
+function showConfigWarningIfNeeded(){
+  if (configOk()) return;
+  const w = document.createElement('div');
+  w.className = 'msg bad';
+  w.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99;text-align:center;';
+  w.textContent = '⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.';
+  document.body.appendChild(w);
 }
 
 let resendTimer = null;
@@ -210,7 +222,11 @@ async function requestOtp(isResend, intent){
     }else{
       msg.innerHTML = `<div class="msg bad">${r.error||'Không gửi được mã.'}</div>`;
     }
-  }catch(e){ msg.innerHTML = '<div class="msg bad">Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.</div>'; }
+  }catch(e){
+    msg.innerHTML = e.message === 'CONFIG_MISSING'
+      ? '<div class="msg bad">Form chưa được cấu hình API_URL. Xem cảnh báo đỏ ở đầu trang.</div>'
+      : '<div class="msg bad">Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.</div>';
+  }
 }
 
 function startResendCooldown(){
@@ -372,6 +388,7 @@ function exportExcel(){
 
 (function init(){
   renderBrandbar('brandbarLogin');
+  showConfigWarningIfNeeded();
   const saved = sessionStorage.getItem('pbs_session');
   if (saved){ session = JSON.parse(saved); enterApp(); document.getElementById('loginScreen').style.display='none'; }
 })();

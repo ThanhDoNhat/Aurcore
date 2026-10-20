@@ -144,7 +144,7 @@ function addLine(){
 }
 
 async function api(payload){
-  const res = await fetch(https://script.google.com/macros/s/AKfycbylRbyGwuSnbytyQYVklc4f8rU4fqxTxVIPoPSP2s2wF_KGpihromI1fqVpw-3IsZ8n/exec, { method:'POST', body: JSON.stringify(payload) });
+  const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(payload) });
   return res.json();
 }
 

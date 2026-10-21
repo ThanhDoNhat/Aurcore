@@ -403,7 +403,8 @@ async function submitForm(){
   try{
     const r = await api(Object.assign({action:'submit', email:session.email, token:session.token}, data));
     if (r.ok){
-      msg.innerHTML = '<div class="msg ok">Đã gửi đăng ký thành công' + (r.emailSent?' và email xác nhận đã gửi tới hộp thư của bạn':' (email xác nhận không gửi được, nhưng dự án đã được ghi nhận)') + '. EAVN sẽ xem xét và cập nhật trạng thái, giá &amp; % rebate.</div>';
+      msg.innerHTML = '<div class="msg ok">Đã gửi đăng ký thành công' + (r.emailSent?' và email xác nhận đã gửi tới hộp thư của bạn':' (email xác nhận không gửi được, nhưng dự án đã được ghi nhận)') + '. EAVN sẽ xem xét và cập nhật trạng thái, giá &amp; % rebate.</div>'
+        + '<div class="hint" style="margin-top:8px;">[DEBUG — gửi ảnh chụp dòng này cho Claude nếu sản phẩm vẫn không hiện] Client gửi đi: ' + JSON.stringify(data.lines) + ' | Server nhận được: ' + JSON.stringify(r.debug && r.debug.receivedLinesFromClient) + ' | Cột ProductLinesJSON số: ' + (r.debug && r.debug.productLinesJSONColumnIndex) + ' / tổng ' + (r.debug && r.debug.totalColumns) + ' cột</div>';
       ['f_company','f_contact','f_customer','f_taxcode','f_industry','f_project','f_desc','f_value','f_close','f_competitor','addrSearch','f_address'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('lineItems').innerHTML=''; addLine();
       document.getElementById('dupWarning').innerHTML='';

@@ -141,7 +141,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
         <button class="btn-primary" onclick="requestOtp(false,'form')">Đăng ký dự án mới</button>
         <button class="btn-ghost" onclick="requestOtp(false,'mine')">Xem dự án đã đăng ký</button>
       </div>
-      <div class="hint">Bạn sẽ nhận 1 mã xác thực gửi qua email.</div>
+      <div class="hint">Vui lòng nhận mã xác thực gửi qua email.</div>
     </div>
 
     <div id="stepOtp" style="display:none;">
@@ -403,7 +403,7 @@ async function submitForm(){
   try{
     const r = await api(Object.assign({action:'submit', email:session.email, token:session.token}, data));
     if (r.ok){
-      msg.innerHTML = '<div class="msg ok">Đã gửi đăng ký thành công. EAVN sẽ xem xét và cập nhật trạng thái, giá &amp; % rebate.</div>';
+      msg.innerHTML = '<div class="msg ok">Đã gửi đăng ký thành công' + (r.emailSent?' và email xác nhận đã gửi tới hộp thư của bạn':' (email xác nhận không gửi được, nhưng dự án đã được ghi nhận)') + '. EAVN sẽ xem xét và cập nhật trạng thái, giá &amp; % rebate.</div>';
       ['f_company','f_contact','f_customer','f_taxcode','f_industry','f_project','f_desc','f_value','f_close','f_competitor','addrSearch','f_address'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('lineItems').innerHTML=''; addLine();
       document.getElementById('dupWarning').innerHTML='';
@@ -458,9 +458,20 @@ function renderAdminList(rows){
     const noteInput=document.createElement('input'); noteInput.value=s.GhiChuNoiBo||''; noteInput.placeholder='Ghi chú nội bộ'; noteInput.style.marginTop='6px';
     const saveStatus=()=>updateStatus(s.ID, sel.value, noteInput.value);
     sel.onchange=saveStatus; noteInput.onblur=saveStatus;
-    ctrlDiv.appendChild(sel); ctrlDiv.appendChild(noteInput);
+    const quoteBtn=document.createElement('button'); quoteBtn.className='btn-ghost btn-sm'; quoteBtn.style.marginTop='6px'; quoteBtn.style.display='block';
+    quoteBtn.textContent='📧 Gửi báo giá cho đại lý';
+    const quoteMsg=document.createElement('div'); quoteMsg.className='hint';
+    quoteBtn.onclick=()=>sendQuote(s.ID, quoteBtn, quoteMsg);
+    ctrlDiv.appendChild(sel); ctrlDiv.appendChild(noteInput); ctrlDiv.appendChild(quoteBtn); ctrlDiv.appendChild(quoteMsg);
 
     const lines = parseLines(s);
+    if (!lines.length){
+      const empty=document.createElement('div'); empty.className='hint';
+      empty.textContent = 'Không có dữ liệu model/sản phẩm cho dự án này (ProductLinesJSON thô: ' + JSON.stringify(s.ProductLinesJSON||'') + ')';
+      card.appendChild(empty);
+      list.appendChild(card);
+      return;
+    }
     const tbl = document.createElement('table'); tbl.className='lines-table';
     tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (USD)</th><th>% Rebate</th></tr></thead>';
     const tbody=document.createElement('tbody');
@@ -486,6 +497,15 @@ async function updateStatus(id, status, note){
 
 async function updateLines(id, lines){
   try{ await api({action:'updateLines', email:session.email, token:session.token, id, lines}); }catch(e){}
+}
+
+async function sendQuote(id, btn, msgEl){
+  btn.disabled = true; msgEl.textContent = 'Đang gửi…';
+  try{
+    const r = await api({action:'sendQuote', email:session.email, token:session.token, id});
+    msgEl.textContent = r.ok ? '✓ Đã gửi báo giá.' : (r.error || 'Gửi thất bại.');
+  }catch(e){ msgEl.textContent = 'Lỗi kết nối.'; }
+  btn.disabled = false;
 }
 
 function exportExcel(){
@@ -530,6 +550,13 @@ function renderMineList(rows){
       <div><span class="badge st-${s.TrangThai||'Submitted'}">${esc(s.TrangThai||'Submitted')}</span></div>
     </div>`;
     const lines = parseLines(s);
+    if (!lines.length){
+      const empty=document.createElement('div'); empty.className='hint';
+      empty.textContent = 'Không có dữ liệu model/sản phẩm cho dự án này (ProductLinesJSON thô: ' + JSON.stringify(s.ProductLinesJSON||'') + ')';
+      card.appendChild(empty);
+      list.appendChild(card);
+      return;
+    }
     const tbl = document.createElement('table'); tbl.className='lines-table';
     tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (USD)</th><th>% Rebate</th><th>Thành tiền ước tính</th></tr></thead>';
     const tbody=document.createElement('tbody');

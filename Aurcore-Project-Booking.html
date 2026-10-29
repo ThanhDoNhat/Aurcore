@@ -88,7 +88,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
     <label>Tên dự án *</label><input id="f_project">
     <label>Mô tả / yêu cầu kỹ thuật</label><textarea id="f_desc"></textarea>
     <div class="row">
-      <div><label>Giá trị ước tính (VNĐ)</label><input id="f_value" type="number"></div>
+      <div><label>Giá trị ước tính (VNĐ, đã gồm VAT)</label><input id="f_value" type="number"></div>
       <div><label>Ngày dự kiến chốt</label><input id="f_close" type="date"></div>
     </div>
     <label>Đối thủ cạnh tranh (nếu có)</label><input id="f_competitor">
@@ -114,7 +114,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 <div id="viewMine" style="display:none;">
   <div class="card">
     <div class="toolbar"><button class="btn-ghost" onclick="loadMine()">Tải lại</button></div>
-    <div class="hint" style="margin-bottom:8px;">Dự án do chính email của bạn đăng ký. Giá &amp; % rebate do EAVN cập nhật sau khi xét duyệt.</div>
+    <div class="hint" style="margin-bottom:8px;">Dự án do chính email của bạn đăng ký. Giá &amp; % rebate do EAVN cập nhật sau khi xét duyệt. Mọi số tiền tính bằng VNĐ, đã bao gồm VAT.</div>
     <div id="mineList"></div>
   </div>
 </div>
@@ -543,7 +543,7 @@ function renderAdminList(rows){
       return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
-    tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (VNĐ)</th><th>% Rebate</th><th>Giá sau rebate</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (VNĐ, đã gồm VAT)</th><th>% Rebate</th><th>Giá sau rebate (VNĐ)</th></tr></thead>';
     const tbody=document.createElement('tbody');
     lines.forEach((ln,idx)=>{
       const tr=document.createElement('tr');
@@ -594,8 +594,8 @@ function exportExcel(){
         NgayDangKy:date, CongTyDoiTac:s.CongTyDoiTac, NguoiDangKy:s.NguoiDangKy, Email:s.Email,
         KhachHangCuoi:s.KhachHangCuoi, MaSoThue:s.MaSoThue, Nganh:s.Nganh, TenDuAn:s.TenDuAn,
         MoTa:s.MoTa, GiaTriUocTinh:s.GiaTriUocTinh, NgayDuKienChot:s.NgayDuKienChot, DoiThu:s.DoiThu,
-        ViTriDiaChi:s.ViTriDiaChi, Model:ln.model, SoLuong:ln.qty, DonGia_VND:ln.price, PhanTramRebate:ln.rebatePct,
-        GiaSauRebate_VND: finalUnit!==null?Math.round(finalUnit):'', ThanhTienSauRebate_VND: finalUnit!==null?Math.round(finalUnit*qty):'',
+        ViTriDiaChi:s.ViTriDiaChi, Model:ln.model, SoLuong:ln.qty, DonGia_VND_DaGomVAT:ln.price, PhanTramRebate:ln.rebatePct,
+        GiaSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit):'', ThanhTienSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit*qty):'',
         TrangThai:s.TrangThai, GhiChuNoiBo:s.GhiChuNoiBo
       });
     });
@@ -635,7 +635,7 @@ function renderMineList(rows){
       return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
-    tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (VNĐ)</th><th>% Rebate</th><th>Giá sau rebate</th><th>Thành tiền (sau rebate)</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (VNĐ, đã gồm VAT)</th><th>% Rebate</th><th>Giá sau rebate (VNĐ)</th><th>Thành tiền sau rebate (VNĐ)</th></tr></thead>';
     const tbody=document.createElement('tbody');
     let totalBefore=0, totalAfter=0, hasPrice=false;
     lines.forEach(ln=>{
@@ -655,7 +655,7 @@ function renderMineList(rows){
     card.appendChild(tbl);
     if (hasPrice){
       const t=document.createElement('div'); t.className='total-line';
-      t.innerHTML = 'Tổng trước rebate: ' + fmtMoney(totalBefore) + '<br>Tổng SAU rebate (giá cuối cùng): <span style="color:var(--ok)">' + fmtMoney(totalAfter) + '</span>';
+      t.innerHTML = 'Tổng trước rebate (đã gồm VAT): ' + fmtMoney(totalBefore) + '<br>Tổng SAU rebate (giá cuối cùng, đã gồm VAT): <span style="color:var(--ok)">' + fmtMoney(totalAfter) + '</span>';
       card.appendChild(t);
     }
     if (s.GhiChuNoiBo){

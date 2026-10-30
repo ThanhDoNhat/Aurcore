@@ -1260,9 +1260,9 @@ async function issueCn(){
   try{
     const r = await api({action:'issueCN', email:session.email, token:session.token, ids, soCN: document.getElementById('cnNumber').value.trim()});
     if (r.ok){
-      vendorMsg('cnMsg', t('Đã chốt CN {no}: {n} dự án, tổng rebate {total}.', {no: r.soCN, n: r.count, total: fmtVendor(r.total)}), 'ok');
       document.getElementById('cnNumber').value = '';
-      loadCn();
+      await loadCn();
+      vendorMsg('cnMsg', t('Đã chốt CN {no}: {n} dự án, tổng rebate {total}.', {no: r.soCN, n: r.count, total: fmtVendor(r.total)}), 'ok');
     }else vendorMsg('cnMsg', te(r.error) || t('Gửi thất bại.'));
   }catch(e){ vendorMsg('cnMsg', t('Lỗi kết nối tới hệ thống.')); }
 }

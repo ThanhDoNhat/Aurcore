@@ -60,6 +60,13 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 .subcard-head .meta{font-size:12.5px;color:var(--muted);}
 .lines-table input{padding:5px 6px;font-size:12.5px;}
 .total-line{font-weight:700;font-size:13px;margin-top:6px;}
+.brandbar{flex-wrap:wrap;row-gap:8px;}
+.st-Won{background:rgba(26,138,76,.22);color:var(--ok);}
+.st-Lost{background:rgba(107,114,128,.18);color:var(--muted);}
+.vtotal{font-weight:700;font-size:13px;margin-top:6px;}
+.langsw{margin-left:auto;display:flex;gap:4px;}
+.langsw button{padding:4px 9px;font-size:12px;border-radius:6px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);font-weight:600;}
+.langsw button.on{background:var(--gold);color:var(--navy);border-color:var(--gold);}
 </style>
 </head>
 <body>
@@ -70,6 +77,8 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   <div class="tab active" id="tabForm" onclick="showView('form')">Đăng ký dự án</div>
   <div class="tab" id="tabMine" onclick="showView('mine')">Dự án của tôi</div>
   <div class="tab" id="tabAdmin" style="display:none" onclick="showView('admin')">Quản trị</div>
+  <div class="tab" id="tabVendor" style="display:none" onclick="showView('vendor')">Dự án đăng ký</div>
+  <div class="tab" id="tabCn" style="display:none" onclick="showView('cn')">Tổng hợp CN</div>
   <button class="btn-ghost btn-sm" style="margin-left:auto" onclick="logout()">Đăng xuất</button>
 </div>
 
@@ -83,7 +92,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
       <div><label>Khách hàng cuối *</label><input id="f_customer"></div>
       <div><label>Mã số thuế khách hàng cuối *</label><input id="f_taxcode" onblur="checkDup()"></div>
     </div>
-    <div id="dupWarning"></div>
+    <div id="dupWarning" data-noi18n></div>
     <label>Ngành / Industry</label><input id="f_industry">
     <label>Tên dự án *</label><input id="f_project">
     <label>Mô tả / yêu cầu kỹ thuật</label><textarea id="f_desc"></textarea>
@@ -101,13 +110,13 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
     <div id="mapPicker"></div>
     <div class="hint">Bấm vào bản đồ để ghim đúng vị trí lắp đặt (hoặc tìm địa chỉ ở trên rồi bấm Tìm).</div>
     <input id="f_address" readonly placeholder="Địa chỉ / toạ độ sẽ tự điền sau khi chọn trên bản đồ" style="margin-top:6px;">
-    <div id="mapMsg"></div>
+    <div id="mapMsg" data-noi18n></div>
 
     <label style="margin-top:14px;">Model Aurcore &amp; số lượng *</label>
     <div id="lineItems"></div>
     <button class="btn-ghost btn-sm" onclick="addLine()">+ Thêm model</button>
     <div style="margin-top:16px;"><button class="btn-primary" onclick="submitForm()">Gửi đăng ký</button></div>
-    <div id="formMsg"></div>
+    <div id="formMsg" data-noi18n></div>
   </div>
 </div>
 
@@ -115,7 +124,40 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   <div class="card">
     <div class="toolbar"><button class="btn-ghost" onclick="loadMine()">Tải lại</button></div>
     <div class="hint" style="margin-bottom:8px;">Dự án do chính email của bạn đăng ký. Giá &amp; % rebate do EAVN cập nhật sau khi xét duyệt. Mọi số tiền tính bằng VNĐ, đã bao gồm VAT.</div>
-    <div id="mineList"></div>
+    <div id="mineList" data-noi18n></div>
+  </div>
+</div>
+
+<div id="viewVendor" style="display:none;">
+  <div class="card">
+    <div class="toolbar">
+      <button class="btn-ghost" onclick="loadVendor()">Tải lại</button>
+      <select id="vFilter" data-noi18n onchange="vFilterVal=this.value; renderVendorList()" style="width:auto;"></select>
+    </div>
+    <div class="hint" style="margin-bottom:8px;">Nhập khoản rebate hỗ trợ cho từng model của dự án. Giá bán của EAVN cho khách hàng không hiển thị với Vendor.</div>
+    <div id="vendorMsg" data-noi18n></div>
+    <div id="vendorList" data-noi18n></div>
+  </div>
+</div>
+
+<div id="viewCn" style="display:none;">
+  <div class="card">
+    <div class="row">
+      <div><label>Từ ngày Won</label><input id="cnFrom" type="date"></div>
+      <div><label>Đến ngày Won</label><input id="cnTo" type="date"></div>
+    </div>
+    <div class="toolbar" style="margin-top:10px;">
+      <button class="btn-ghost" onclick="loadCn()">Xem tổng hợp</button>
+      <select id="cnFilter" data-noi18n onchange="cnFilterVal=this.value; renderCnList()" style="width:auto;"></select>
+      <button class="btn-primary" id="cnExportBtn" style="display:none" onclick="exportCnExcel()">Xuất Excel CN</button>
+    </div>
+    <div id="cnList" data-noi18n></div>
+    <div id="cnAdminBar" style="display:none;margin-top:12px;">
+      <button class="btn-ghost btn-sm" onclick="cnSelectPending()">Chọn tất cả chưa chốt CN</button>
+      <label>Số CN (để trống = tự đánh số)</label><input id="cnNumber">
+      <div style="margin-top:8px;"><button class="btn-primary" onclick="issueCn()">Chốt CN cho các dự án đã chọn</button></div>
+    </div>
+    <div id="cnMsg" data-noi18n></div>
   </div>
 </div>
 
@@ -125,7 +167,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
       <button class="btn-ghost" onclick="loadSubmissions()">Tải lại</button>
       <button class="btn-primary" onclick="exportExcel()">Xuất Excel</button>
     </div>
-    <div id="subList"></div>
+    <div id="subList" data-noi18n></div>
   </div>
 </div>
 </div>
@@ -150,11 +192,11 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
       <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
         <button class="btn-primary" onclick="verifyOtp()">Xác nhận</button>
         <button class="btn-ghost" onclick="backToEmail()">Đổi email</button>
-        <button class="resend" id="resendBtn" onclick="requestOtp(true)">Gửi lại mã</button>
+        <button class="resend" id="resendBtn" data-noi18n onclick="requestOtp(true)">Gửi lại mã</button>
       </div>
     </div>
 
-    <div id="loginMsg"></div>
+    <div id="loginMsg" data-noi18n></div>
   </div>
 </div>
 
@@ -163,7 +205,9 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbyJdA6DI7GhkCBnNB3d_YHNuNaazVO91uTX_LX1FbKzy9yVLFU1WQvaQ5JezD_6POVDZA/exec',
   // Để trống = dùng OpenStreetMap (miễn phí). Dán Google Maps API Key vào đây = dùng Google Maps tiếng Việt.
-  GOOGLE_MAPS_KEY: ''
+  GOOGLE_MAPS_KEY: '',
+  // Đơn vị tiền của rebate Vendor (chỉ là nhãn hiển thị, ví dụ 'USD' hoặc 'VNĐ').
+  VENDOR_CCY: 'USD'
 };
 // ===================================================================================================
 
@@ -175,7 +219,8 @@ function renderBrandbar(elId){
   el.innerHTML = `<img src="${LOGO_AURCORE_B64}" alt="Aurcore Networks">
     <div class="divider"></div>
     <img src="${LOGO_EAVN_B64}" alt="EAVN">
-    <div style="margin-left:4px;"><div class="tagline">Project Booking System</div></div>`;
+    <div style="margin-left:4px;"><div class="tagline">Project Booking System</div></div>
+    <div class="langsw">${[['vi','VI'],['en','EN'],['zh','中文']].map(([c,l])=>`<button class="${LANG===c?'on':''}" onclick="setLang('${c}')">${l}</button>`).join('')}</div>`;
 }
 
 const PRODUCTS = {
@@ -184,8 +229,382 @@ const PRODUCTS = {
   'Industrial (AIS2xxx, AIS4xxx)': ['AIS2001','AIS2001P','AIS2002','AIS2002P','AIS2003','AIS2003P','AIS2004','AIS2004P','AIS4001','AIS4001P']
 };
 
+// ====== ĐA NGÔN NGỮ (vi / en / zh) ======
+// Quy ước: chuỗi gốc là tiếng Việt, DICT tra theo đúng chuỗi tiếng Việt đó. Thiếu bản dịch thì hiện tiếng Việt.
+let LANG = 'vi';
+try{ const _s = localStorage.getItem('pbs_lang'); if (_s === 'en' || _s === 'zh' || _s === 'vi') LANG = _s; }catch(e){}
+
+const DICT = {
+ en: {
+ "Đăng ký dự án & theo dõi phê duyệt — xin chào": "Project registration & approval tracking — hello",
+ "Đăng ký dự án": "Register project",
+ "Dự án của tôi": "My projects",
+ "Quản trị": "Admin",
+ "Đăng xuất": "Log out",
+ "Công ty đối tác (Reseller) *": "Partner company (Reseller) *",
+ "Người đăng ký *": "Registrant *",
+ "Khách hàng cuối *": "End customer *",
+ "Mã số thuế khách hàng cuối *": "End customer tax code *",
+ "Ngành / Industry": "Industry",
+ "Tên dự án *": "Project name *",
+ "Mô tả / yêu cầu kỹ thuật": "Description / technical requirements",
+ "Giá trị ước tính (VNĐ, đã gồm VAT)": "Estimated value (VND, VAT included)",
+ "Ngày dự kiến chốt": "Expected closing date",
+ "Đối thủ cạnh tranh (nếu có)": "Competitors (if any)",
+ "Vị trí triển khai dự án *": "Project deployment location *",
+ "Nhập địa chỉ để tìm trên bản đồ...": "Enter an address to search on the map...",
+ "Tìm": "Search",
+ "Bấm vào bản đồ để ghim đúng vị trí lắp đặt (hoặc tìm địa chỉ ở trên rồi bấm Tìm).": "Click the map to pin the exact installation site (or search an address above, then click Search).",
+ "Địa chỉ / toạ độ sẽ tự điền sau khi chọn trên bản đồ": "Address / coordinates are filled in automatically after you select a spot on the map",
+ "Model Aurcore & số lượng *": "Aurcore model & quantity *",
+ "+ Thêm model": "+ Add model",
+ "Gửi đăng ký": "Submit registration",
+ "-- Chọn model --": "-- Select model --",
+ "Số lượng": "Quantity",
+ "Xoá": "Remove",
+ "Tải lại": "Reload",
+ "Dự án do chính email của bạn đăng ký. Giá & % rebate do EAVN cập nhật sau khi xét duyệt. Mọi số tiền tính bằng VNĐ, đã bao gồm VAT.": "Projects registered with your own email. Prices and rebate % are updated by EAVN after review. All amounts are in VND, VAT included.",
+ "Xuất Excel": "Export Excel",
+ "Đăng nhập bằng email công ty của bạn để đăng ký dự án hoặc xem lại các dự án đã đăng ký": "Log in with your company email to register a project or review the projects you have registered",
+ "Đăng ký dự án mới": "Register a new project",
+ "Xem dự án đã đăng ký": "View registered projects",
+ "Nhận mã xác thực gửi qua email — chỉ khác màn hình hiện ra sau khi đăng nhập.": "You will receive a verification code by email — the only difference is which screen opens after login.",
+ "Mã xác thực đã gửi tới": "Verification code sent to",
+ ". Kiểm tra hộp thư (và mục Spam).": ". Check your inbox (and Spam folder).",
+ "Nhập mã 6 số": "Enter the 6-digit code",
+ "Xác nhận": "Confirm",
+ "Đổi email": "Change email",
+ "Gửi lại mã": "Resend code",
+ "Gửi lại mã ({s}s)": "Resend code ({s}s)",
+ "⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.": "⚠️ The Web App URL has not been pasted into CONFIG.API_URL in the HTML file — the form will not work until it is configured.",
+ "Không tải được thư viện bản đồ. Kiểm tra kết nối mạng rồi tải lại trang.": "Could not load the map library. Check your network connection and reload the page.",
+ "Google Maps từ chối API Key (sai key, chưa bật thanh toán, hoặc chưa bật \"Maps JavaScript API\" và \"Geocoding API\").": "Google Maps rejected the API Key (wrong key, billing not enabled, or \"Maps JavaScript API\" and \"Geocoding API\" not enabled).",
+ "Không tải được Google Maps. Kiểm tra kết nối mạng và API Key.": "Could not load Google Maps. Check your network connection and API Key.",
+ "Bản đồ chưa tải xong, vui lòng thử lại sau giây lát.": "The map has not finished loading, please try again in a moment.",
+ "Đang tìm…": "Searching…",
+ "Không tìm thấy địa chỉ, thử ghim trực tiếp trên bản đồ.": "Address not found, try pinning the spot directly on the map.",
+ "Lỗi tìm kiếm địa chỉ.": "Address search failed.",
+ "Mã số thuế khách hàng này đã có dự án được đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.": "A project has already been registered for this customer tax code (status: {st}). Please contact EAVN to confirm before continuing.",
+ "Vị trí triển khai này rất gần một dự án đã đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.": "This deployment location is very close to a previously registered project (status: {st}). Please contact EAVN to confirm before continuing.",
+ "Vui lòng nhập email.": "Please enter your email.",
+ "Đang gửi mã…": "Sending code…",
+ "Đã gửi lại mã mới.": "A new code has been sent.",
+ "Không gửi được mã.": "Could not send the code.",
+ "Form chưa được cấu hình API_URL. Xem cảnh báo đỏ ở đầu trang.": "The form has no API_URL configured. See the red warning at the top of the page.",
+ "Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.": "Could not connect to the system. Check API_URL in the configuration.",
+ "Vui lòng nhập mã xác thực.": "Please enter the verification code.",
+ "Đang xác thực…": "Verifying…",
+ "Mã không đúng.": "Incorrect code.",
+ "Lỗi kết nối tới hệ thống.": "Connection error.",
+ "Vui lòng điền đủ các trường có dấu *.": "Please fill in all fields marked with *.",
+ "Vui lòng chọn ít nhất 1 model sản phẩm.": "Please select at least 1 product model.",
+ "Vui lòng chọn vị trí triển khai dự án trên bản đồ.": "Please select the project deployment location on the map.",
+ "Đang gửi…": "Sending…",
+ "Đã gửi đăng ký thành công và email xác nhận đã gửi tới hộp thư của bạn. EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.": "Registration submitted successfully and a confirmation email has been sent to your inbox. EAVN will review it and update the status, prices and rebate %.",
+ "Đã gửi đăng ký thành công (email xác nhận không gửi được{err}, nhưng dự án đã được ghi nhận). EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.": "Registration submitted successfully (the confirmation email could not be sent{err}, but the project has been recorded). EAVN will review it and update the status, prices and rebate %.",
+ "Gửi thất bại.": "Submission failed.",
+ "⚠️ Trùng mã số thuế": "⚠️ Duplicate tax code",
+ "KH": "Customer",
+ "MST": "Tax code",
+ "Vị trí": "Location",
+ "Giá trị ước tính": "Est. value",
+ "Dự kiến chốt": "Expected close",
+ "Ghi chú nội bộ": "Internal note",
+ "📧 Gửi báo giá cho đại lý": "📧 Send quote to partner",
+ "Dự án này chưa có model nào được ghi nhận.": "No models have been recorded for this project.",
+ "SL": "Qty",
+ "Đơn giá (VNĐ, đã gồm VAT)": "Unit price (VND, VAT incl.)",
+ "% Rebate": "% Rebate",
+ "Giá sau rebate (VNĐ)": "Price after rebate (VND)",
+ "Thành tiền sau rebate (VNĐ)": "Amount after rebate (VND)",
+ "/đv": "/unit",
+ "Chưa có giá": "No price yet",
+ "Tổng trước rebate (đã gồm VAT)": "Total before rebate (VAT incl.)",
+ "Tổng SAU rebate (giá cuối cùng, đã gồm VAT)": "Total AFTER rebate (final price, VAT incl.)",
+ "Ghi chú từ EAVN": "Note from EAVN",
+ "✓ Đã gửi báo giá.": "✓ Quote sent.",
+ "Lỗi kết nối.": "Connection error.",
+ "Email không hợp lệ.": "Invalid email address.",
+ "Không gửi được email xác thực: ": "Could not send the verification email: ",
+ "Mã xác thực không đúng hoặc đã hết hạn.": "The verification code is incorrect or has expired.",
+ "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.": "Your session has expired. Please log in again.",
+ "Vui lòng nhập mã số thuế khách hàng cuối.": "Please enter the end customer tax code.",
+ "Không có quyền quản trị hoặc phiên hết hạn.": "No admin permission, or the session has expired.",
+ "Không tìm thấy dự án.": "Project not found.",
+ "Gửi email thất bại: ": "Failed to send the email: ",
+ "Dự án đăng ký": "Registered projects",
+ "Tổng hợp CN": "Credit note (CN) summary",
+ "Nhập khoản rebate hỗ trợ cho từng model của dự án. Giá bán của EAVN cho khách hàng không hiển thị với Vendor.": "Enter the support rebate for each model in the project. EAVN selling prices to customers are not shown to the Vendor.",
+ "Từ ngày Won": "Won date from",
+ "Đến ngày Won": "Won date to",
+ "Xem tổng hợp": "Show summary",
+ "Xuất Excel CN": "Export CN Excel",
+ "Chọn tất cả chưa chốt CN": "Select all not yet issued",
+ "Số CN (để trống = tự đánh số)": "CN number (leave blank to auto-number)",
+ "Chốt CN cho các dự án đã chọn": "Issue CN for selected projects",
+ "Rebate Vendor / đơn vị": "Vendor rebate / unit",
+ "Tổng rebate Vendor": "Total Vendor rebate",
+ "Ghi chú Vendor": "Vendor note",
+ "Ngày Won": "Won date",
+ "Số CN": "CN no.",
+ "Tất cả trạng thái": "All statuses",
+ "Tất cả": "All",
+ "Chưa chốt CN": "Not yet issued",
+ "Đã chốt CN": "CN issued",
+ "Chưa có dự án nào.": "No projects yet.",
+ "Đối tác": "Partner",
+ "Ngành": "Industry",
+ "Đối thủ": "Competitor",
+ "Mô tả": "Description",
+ "Rebate / đơn vị": "Rebate / unit",
+ "Thành tiền rebate": "Rebate amount",
+ "Tổng rebate cho dự án": "Total rebate for the project",
+ "Ghi chú tiến độ / điều kiện rebate": "Progress note / rebate conditions",
+ "🔒 Đã chốt CN {no} — không thể sửa rebate.": "🔒 CN {no} has been issued — the rebate can no longer be edited.",
+ "💾 Lưu rebate": "💾 Save rebate",
+ "Giá trị rebate không hợp lệ.": "Invalid rebate value.",
+ "Đã lưu.": "Saved.",
+ "Không có dự án Won nào trong khoảng đã chọn.": "No Won projects in the selected range.",
+ "Dự án": "Project",
+ "Khách hàng": "Customer",
+ "Tổng rebate đang hiển thị": "Total rebate shown",
+ "Vui lòng chọn ít nhất 1 dự án.": "Please select at least 1 project.",
+ "Chốt CN cho {n} dự án, tổng rebate {total}?": "Issue a CN for {n} project(s), total rebate {total}?",
+ "Đã chốt CN {no}: {n} dự án, tổng rebate {total}.": "CN {no} issued: {n} project(s), total rebate {total}.",
+ "Không có quyền truy cập Vendor hoặc phiên hết hạn.": "No Vendor access, or the session has expired.",
+ "Tài khoản Vendor không đăng ký dự án.": "Vendor accounts cannot register projects.",
+ "Dự án đã chốt CN, không thể sửa rebate.": "A CN has been issued for this project, the rebate cannot be edited.",
+ "Dự án đã lập CN, không thể đổi trạng thái.": "A CN has been issued for this project, the status cannot be changed.",
+ "Chỉ chốt CN cho dự án đã Won và chưa có số CN.": "A CN can only be issued for Won projects without a CN number.",
+ "Trạng thái không hợp lệ.": "Invalid status.",
+ "Chưa chọn dự án nào.": "No project selected.",
+ "Hệ thống đang bận, vui lòng thử lại.": "The system is busy, please try again."
+},
+ zh: {
+ "Đăng ký dự án & theo dõi phê duyệt — xin chào": "项目报备与审批跟踪 — 您好",
+ "Đăng ký dự án": "项目报备",
+ "Dự án của tôi": "我的项目",
+ "Quản trị": "管理",
+ "Đăng xuất": "退出登录",
+ "Công ty đối tác (Reseller) *": "合作伙伴公司（经销商）*",
+ "Người đăng ký *": "报备人 *",
+ "Khách hàng cuối *": "最终客户 *",
+ "Mã số thuế khách hàng cuối *": "最终客户税号 *",
+ "Ngành / Industry": "行业",
+ "Tên dự án *": "项目名称 *",
+ "Mô tả / yêu cầu kỹ thuật": "项目描述 / 技术要求",
+ "Giá trị ước tính (VNĐ, đã gồm VAT)": "预计金额（越南盾，含增值税）",
+ "Ngày dự kiến chốt": "预计成交日期",
+ "Đối thủ cạnh tranh (nếu có)": "竞争对手（如有）",
+ "Vị trí triển khai dự án *": "项目部署地点 *",
+ "Nhập địa chỉ để tìm trên bản đồ...": "输入地址以在地图上搜索...",
+ "Tìm": "搜索",
+ "Bấm vào bản đồ để ghim đúng vị trí lắp đặt (hoặc tìm địa chỉ ở trên rồi bấm Tìm).": "点击地图标记准确的安装位置（或在上方搜索地址后点击“搜索”）。",
+ "Địa chỉ / toạ độ sẽ tự điền sau khi chọn trên bản đồ": "在地图上选点后将自动填入地址/坐标",
+ "Model Aurcore & số lượng *": "Aurcore 型号及数量 *",
+ "+ Thêm model": "+ 添加型号",
+ "Gửi đăng ký": "提交报备",
+ "-- Chọn model --": "-- 选择型号 --",
+ "Số lượng": "数量",
+ "Xoá": "删除",
+ "Tải lại": "刷新",
+ "Dự án do chính email của bạn đăng ký. Giá & % rebate do EAVN cập nhật sau khi xét duyệt. Mọi số tiền tính bằng VNĐ, đã bao gồm VAT.": "由您本人邮箱报备的项目。价格和返利比例由 EAVN 在审核后更新。所有金额均以越南盾计，含增值税。",
+ "Xuất Excel": "导出 Excel",
+ "Đăng nhập bằng email công ty của bạn để đăng ký dự án hoặc xem lại các dự án đã đăng ký": "请使用公司邮箱登录，以报备项目或查看已报备的项目",
+ "Đăng ký dự án mới": "报备新项目",
+ "Xem dự án đã đăng ký": "查看已报备项目",
+ "Nhận mã xác thực gửi qua email — chỉ khác màn hình hiện ra sau khi đăng nhập.": "验证码将通过邮件发送 — 两个选项仅在登录后打开的页面不同。",
+ "Mã xác thực đã gửi tới": "验证码已发送至",
+ ". Kiểm tra hộp thư (và mục Spam).": "。请查看收件箱（及垃圾邮件文件夹）。",
+ "Nhập mã 6 số": "输入 6 位验证码",
+ "Xác nhận": "确认",
+ "Đổi email": "更换邮箱",
+ "Gửi lại mã": "重新发送验证码",
+ "Gửi lại mã ({s}s)": "重新发送验证码（{s} 秒）",
+ "⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.": "⚠️ 尚未在 HTML 文件的 CONFIG.API_URL 中填入 Web App 网址 — 配置完成前表单无法使用。",
+ "Không tải được thư viện bản đồ. Kiểm tra kết nối mạng rồi tải lại trang.": "无法加载地图库。请检查网络连接后刷新页面。",
+ "Google Maps từ chối API Key (sai key, chưa bật thanh toán, hoặc chưa bật \"Maps JavaScript API\" và \"Geocoding API\").": "Google 地图拒绝了 API Key（密钥错误、未开通结算，或未启用“Maps JavaScript API”和“Geocoding API”）。",
+ "Không tải được Google Maps. Kiểm tra kết nối mạng và API Key.": "无法加载 Google 地图。请检查网络连接和 API Key。",
+ "Bản đồ chưa tải xong, vui lòng thử lại sau giây lát.": "地图尚未加载完成，请稍后再试。",
+ "Đang tìm…": "正在搜索…",
+ "Không tìm thấy địa chỉ, thử ghim trực tiếp trên bản đồ.": "未找到该地址，请尝试直接在地图上标记。",
+ "Lỗi tìm kiếm địa chỉ.": "地址搜索出错。",
+ "Mã số thuế khách hàng này đã có dự án được đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.": "该客户税号已有项目在先报备（状态：{st}）。继续之前请联系 EAVN 确认。",
+ "Vị trí triển khai này rất gần một dự án đã đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.": "该部署地点与已报备的项目非常接近（状态：{st}）。继续之前请联系 EAVN 确认。",
+ "Vui lòng nhập email.": "请输入邮箱。",
+ "Đang gửi mã…": "正在发送验证码…",
+ "Đã gửi lại mã mới.": "已重新发送新的验证码。",
+ "Không gửi được mã.": "无法发送验证码。",
+ "Form chưa được cấu hình API_URL. Xem cảnh báo đỏ ở đầu trang.": "表单尚未配置 API_URL。请查看页面顶部的红色提示。",
+ "Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.": "无法连接系统。请检查配置中的 API_URL。",
+ "Vui lòng nhập mã xác thực.": "请输入验证码。",
+ "Đang xác thực…": "正在验证…",
+ "Mã không đúng.": "验证码不正确。",
+ "Lỗi kết nối tới hệ thống.": "连接系统出错。",
+ "Vui lòng điền đủ các trường có dấu *.": "请填写所有带 * 的必填项。",
+ "Vui lòng chọn ít nhất 1 model sản phẩm.": "请至少选择 1 个产品型号。",
+ "Vui lòng chọn vị trí triển khai dự án trên bản đồ.": "请在地图上选择项目部署地点。",
+ "Đang gửi…": "正在提交…",
+ "Đã gửi đăng ký thành công và email xác nhận đã gửi tới hộp thư của bạn. EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.": "报备提交成功，确认邮件已发送至您的邮箱。EAVN 将审核并更新状态、价格及返利比例。",
+ "Đã gửi đăng ký thành công (email xác nhận không gửi được{err}, nhưng dự án đã được ghi nhận). EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.": "报备提交成功（确认邮件未能发送{err}，但项目已记录）。EAVN 将审核并更新状态、价格及返利比例。",
+ "Gửi thất bại.": "提交失败。",
+ "⚠️ Trùng mã số thuế": "⚠️ 税号重复",
+ "KH": "客户",
+ "MST": "税号",
+ "Vị trí": "地点",
+ "Giá trị ước tính": "预计金额",
+ "Dự kiến chốt": "预计成交",
+ "Ghi chú nội bộ": "内部备注",
+ "📧 Gửi báo giá cho đại lý": "📧 向合作伙伴发送报价",
+ "Dự án này chưa có model nào được ghi nhận.": "该项目尚未记录任何型号。",
+ "SL": "数量",
+ "Đơn giá (VNĐ, đã gồm VAT)": "单价（越南盾，含增值税）",
+ "% Rebate": "返利比例 %",
+ "Giá sau rebate (VNĐ)": "返利后单价（越南盾）",
+ "Thành tiền sau rebate (VNĐ)": "返利后金额（越南盾）",
+ "/đv": "/台",
+ "Chưa có giá": "暂无价格",
+ "Tổng trước rebate (đã gồm VAT)": "返利前合计（含增值税）",
+ "Tổng SAU rebate (giá cuối cùng, đã gồm VAT)": "返利后合计（最终价格，含增值税）",
+ "Ghi chú từ EAVN": "EAVN 备注",
+ "✓ Đã gửi báo giá.": "✓ 报价已发送。",
+ "Lỗi kết nối.": "连接出错。",
+ "Email không hợp lệ.": "邮箱格式不正确。",
+ "Không gửi được email xác thực: ": "无法发送验证邮件：",
+ "Mã xác thực không đúng hoặc đã hết hạn.": "验证码不正确或已过期。",
+ "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.": "登录已过期，请重新登录。",
+ "Vui lòng nhập mã số thuế khách hàng cuối.": "请输入最终客户税号。",
+ "Không có quyền quản trị hoặc phiên hết hạn.": "无管理权限或登录已过期。",
+ "Không tìm thấy dự án.": "未找到该项目。",
+ "Gửi email thất bại: ": "邮件发送失败：",
+ "Dự án đăng ký": "已报备项目",
+ "Tổng hợp CN": "贷项通知单（CN）汇总",
+ "Nhập khoản rebate hỗ trợ cho từng model của dự án. Giá bán của EAVN cho khách hàng không hiển thị với Vendor.": "请为项目中的每个型号填写支持返利。EAVN 对客户的销售价格不会向厂商显示。",
+ "Từ ngày Won": "赢单日期自",
+ "Đến ngày Won": "赢单日期至",
+ "Xem tổng hợp": "查看汇总",
+ "Xuất Excel CN": "导出 CN Excel",
+ "Chọn tất cả chưa chốt CN": "全选未开具 CN 的项目",
+ "Số CN (để trống = tự đánh số)": "CN 编号（留空则自动编号）",
+ "Chốt CN cho các dự án đã chọn": "为所选项目开具 CN",
+ "Rebate Vendor / đơn vị": "厂商返利 / 单价",
+ "Tổng rebate Vendor": "厂商返利合计",
+ "Ghi chú Vendor": "厂商备注",
+ "Ngày Won": "赢单日期",
+ "Số CN": "CN 编号",
+ "Tất cả trạng thái": "全部状态",
+ "Tất cả": "全部",
+ "Chưa chốt CN": "未开具 CN",
+ "Đã chốt CN": "已开具 CN",
+ "Chưa có dự án nào.": "暂无项目。",
+ "Đối tác": "合作伙伴",
+ "Ngành": "行业",
+ "Đối thủ": "竞争对手",
+ "Mô tả": "描述",
+ "Rebate / đơn vị": "返利 / 单价",
+ "Thành tiền rebate": "返利金额",
+ "Tổng rebate cho dự án": "项目返利合计",
+ "Ghi chú tiến độ / điều kiện rebate": "进度备注 / 返利条件",
+ "🔒 Đã chốt CN {no} — không thể sửa rebate.": "🔒 已开具 CN {no} — 无法再修改返利。",
+ "💾 Lưu rebate": "💾 保存返利",
+ "Giá trị rebate không hợp lệ.": "返利金额无效。",
+ "Đã lưu.": "已保存。",
+ "Không có dự án Won nào trong khoảng đã chọn.": "所选范围内没有赢单项目。",
+ "Dự án": "项目",
+ "Khách hàng": "客户",
+ "Tổng rebate đang hiển thị": "当前显示的返利合计",
+ "Vui lòng chọn ít nhất 1 dự án.": "请至少选择 1 个项目。",
+ "Chốt CN cho {n} dự án, tổng rebate {total}?": "为 {n} 个项目开具 CN，返利合计 {total}？",
+ "Đã chốt CN {no}: {n} dự án, tổng rebate {total}.": "已开具 CN {no}：{n} 个项目，返利合计 {total}。",
+ "Không có quyền truy cập Vendor hoặc phiên hết hạn.": "无厂商访问权限或登录已过期。",
+ "Tài khoản Vendor không đăng ký dự án.": "厂商账户不能报备项目。",
+ "Dự án đã chốt CN, không thể sửa rebate.": "该项目已开具 CN，无法修改返利。",
+ "Dự án đã lập CN, không thể đổi trạng thái.": "该项目已开具 CN，无法更改状态。",
+ "Chỉ chốt CN cho dự án đã Won và chưa có số CN.": "只能为已赢单且尚无 CN 编号的项目开具 CN。",
+ "Trạng thái không hợp lệ.": "状态无效。",
+ "Chưa chọn dự án nào.": "尚未选择项目。",
+ "Hệ thống đang bận, vui lòng thử lại.": "系统繁忙，请稍后重试。"
+}
+};
+
+const STATUS_LABEL = {
+  vi:{Submitted:'Đã gửi', UnderReview:'Đang xét duyệt', Approved:'Đã duyệt', Rejected:'Từ chối', Won:'Đã thắng (Won)', Lost:'Thất bại (Lost)'},
+  en:{Submitted:'Submitted', UnderReview:'Under review', Approved:'Approved', Rejected:'Rejected', Won:'Won', Lost:'Lost'},
+  zh:{Submitted:'已提交', UnderReview:'审核中', Approved:'已批准', Rejected:'已拒绝', Won:'赢单', Lost:'丢单'}
+};
+function statusLabel(st){ return (STATUS_LABEL[LANG] || STATUS_LABEL.vi)[st] || st; }
+
+function t(vi, vars){
+  let s = vi;
+  if (LANG !== 'vi'){ const d = DICT[LANG]; if (d && d[vi] !== undefined) s = d[vi]; }
+  if (vars) Object.keys(vars).forEach(k=>{ s = s.split('{' + k + '}').join(String(vars[k])); });
+  return s;
+}
+
+// Dịch thông báo lỗi do server trả về (server trả tiếng Việt): khớp nguyên câu, hoặc khớp phần đầu kết thúc bằng ": ".
+function te(msg){
+  if (!msg || LANG === 'vi') return msg;
+  const d = DICT[LANG];
+  if (d[msg] !== undefined) return d[msg];
+  for (const k in d){ if (k.slice(-2) === ': ' && msg.indexOf(k) === 0) return d[k] + msg.slice(k.length); }
+  return msg;
+}
+
+// Dịch phần giao diện tĩnh: duyệt các text node + placeholder, nhớ bản gốc tiếng Việt để đổi qua lại giữa các ngôn ngữ.
+const _origText = new WeakMap(), _origPh = new WeakMap();
+function translateStatic(root){
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode(n){
+    const p = n.parentElement;
+    if (!p || p.closest('[data-noi18n]') || p.tagName === 'SCRIPT' || p.tagName === 'STYLE') return NodeFilter.FILTER_REJECT;
+    return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+  }});
+  const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    if (!_origText.has(n)) _origText.set(n, n.nodeValue);
+    const vi = _origText.get(n), key = vi.trim();
+    n.nodeValue = vi.replace(key, t(key));
+  });
+  root.querySelectorAll('[placeholder]').forEach(el=>{
+    if (el.closest('[data-noi18n]')) return;
+    if (!_origPh.has(el)) _origPh.set(el, el.getAttribute('placeholder'));
+    el.setAttribute('placeholder', t(_origPh.get(el)));
+  });
+}
+
+let resendLeft = 0;
+function updateResendLabel(){
+  const btn = document.getElementById('resendBtn'); if (!btn) return;
+  btn.textContent = resendLeft > 0 ? t('Gửi lại mã ({s}s)', {s: resendLeft}) : t('Gửi lại mã');
+}
+
+function setLang(l){
+  if (l !== 'vi' && l !== 'en' && l !== 'zh') return;
+  LANG = l;
+  try{ localStorage.setItem('pbs_lang', l); }catch(e){}
+  document.documentElement.lang = (l === 'zh') ? 'zh-CN' : l;
+  renderBrandbar('brandbarLogin'); renderBrandbar('brandbarApp');
+  translateStatic(document.getElementById('app'));
+  translateStatic(document.getElementById('loginScreen'));
+  updateResendLabel();
+  ['loginMsg','formMsg','mapMsg'].forEach(id=>{ const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const w = document.getElementById('cfgWarn');
+  if (w) w.textContent = t('⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.');
+  if (session){
+    if (allSubs.length) renderAdminList(allSubs);
+    if (mineRows.length) renderMineList(mineRows);
+    fillFilters();
+    if (vendorRows.length) renderVendorList();
+    if (cnRows.length) renderCnList();
+  }
+  checkDup();
+}
+// ====== HẾT PHẦN ĐA NGÔN NGỮ ======
+
 let session = null;
 let allSubs = [];
+let mineRows = [];
+let vendorRows = [], cnRows = [], vFilterVal = 'all', cnFilterVal = 'all';
 let pendingEmail = '';
 let pendingIntent = 'form';
 let mapObj = null, marker = null, selectedLat = null, selectedLng = null;
@@ -194,7 +613,7 @@ function configOk(){ return CONFIG.API_URL && CONFIG.API_URL.indexOf('https://sc
 
 async function api(payload){
   if (!configOk()) throw new Error('CONFIG_MISSING');
-  const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(payload) });
+  const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(Object.assign({lang:LANG}, payload)) });
   return res.json();
 }
 
@@ -203,7 +622,8 @@ function showConfigWarningIfNeeded(){
   const w = document.createElement('div');
   w.className = 'msg bad';
   w.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99;text-align:center;';
-  w.textContent = '⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.';
+  w.id = 'cfgWarn';
+  w.textContent = t('⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.');
   document.body.appendChild(w);
 }
 
@@ -223,6 +643,7 @@ function addLine(){
     <input class="li-qty" type="number" min="1" placeholder="Số lượng">
     <button class="btn-ghost btn-sm" onclick="this.parentElement.remove()">Xoá</button>`;
   document.getElementById('lineItems').appendChild(div);
+  translateStatic(div);
 }
 
 // ====== Bản đồ ======
@@ -231,7 +652,7 @@ const USE_GOOGLE = !!(CONFIG.GOOGLE_MAPS_KEY && CONFIG.GOOGLE_MAPS_KEY.trim());
 let gGeocoder = null, mapLoading = false;
 
 function mapError(text){
-  document.getElementById('mapMsg').innerHTML = '<div class="msg bad">' + text + '</div>';
+  document.getElementById('mapMsg').innerHTML = '<div class="msg bad">' + esc(t(text)) + '</div>';
 }
 
 function ensureMap(){ return USE_GOOGLE ? ensureGoogleMap() : ensureLeafletMap(); }
@@ -254,7 +675,7 @@ function loadGoogleMapsScript(){
     window.__gmapsReady = ()=>resolve();
     const s = document.createElement('script');
     s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(CONFIG.GOOGLE_MAPS_KEY.trim()) +
-            '&language=vi&region=VN&callback=__gmapsReady';
+            '&language=' + (LANG === 'zh' ? 'zh-CN' : LANG) + '&region=VN&callback=__gmapsReady';
     s.async = true; s.onerror = ()=>reject(new Error('load'));
     document.head.appendChild(s);
   });
@@ -321,7 +742,7 @@ async function searchAddress(){
   const msg = document.getElementById('mapMsg');
   if (!q) return;
   if (!mapObj){ mapError('Bản đồ chưa tải xong, vui lòng thử lại sau giây lát.'); return; }
-  msg.innerHTML = '<div class="hint">Đang tìm…</div>';
+  msg.innerHTML = '<div class="hint">' + t('Đang tìm…') + '</div>';
   try{
     let lat, lng, label;
     if (USE_GOOGLE){
@@ -350,7 +771,13 @@ async function checkDup(){
   if (!taxcode && selectedLat===null){ warnEl.innerHTML=''; return; }
   try{
     const r = await api({action:'checkDuplicate', taxcode, lat:selectedLat, lng:selectedLng});
-    warnEl.innerHTML = (r.ok && r.duplicate) ? `<div class="msg bad">⚠️ ${r.message}</div>` : '';
+    if (r.ok && r.duplicate){
+      let m;
+      if (r.status && r.reason === 'taxcode') m = t('Mã số thuế khách hàng này đã có dự án được đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.', {st: statusLabel(r.status)});
+      else if (r.status && r.reason === 'location') m = t('Vị trí triển khai này rất gần một dự án đã đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.', {st: statusLabel(r.status)});
+      else m = r.message;
+      warnEl.innerHTML = '<div class="msg bad">⚠️ ' + esc(m) + '</div>';
+    }else warnEl.innerHTML = '';
   }catch(e){}
 }
 
@@ -361,8 +788,8 @@ async function requestOtp(isResend, intent){
   const email = isResend ? pendingEmail : document.getElementById('loginEmail').value.trim();
   if (!isResend && intent) pendingIntent = intent;
   const msg = document.getElementById('loginMsg');
-  if (!email){ msg.innerHTML='<div class="msg bad">Vui lòng nhập email.</div>'; return; }
-  msg.innerHTML = '<div class="hint">Đang gửi mã…</div>';
+  if (!email){ msg.innerHTML='<div class="msg bad">' + t('Vui lòng nhập email.') + '</div>'; return; }
+  msg.innerHTML = '<div class="hint">' + t('Đang gửi mã…') + '</div>';
   try{
     const r = await api({action:'requestOtp', email});
     if (r.ok){
@@ -370,27 +797,26 @@ async function requestOtp(isResend, intent){
       document.getElementById('otpEmailShown').textContent = email;
       document.getElementById('stepEmail').style.display='none';
       document.getElementById('stepOtp').style.display='';
-      msg.innerHTML = isResend ? '<div class="msg ok">Đã gửi lại mã mới.</div>' : '';
+      msg.innerHTML = isResend ? '<div class="msg ok">' + t('Đã gửi lại mã mới.') + '</div>' : '';
       startResendCooldown();
     }else{
-      msg.innerHTML = `<div class="msg bad">${r.error||'Không gửi được mã.'}</div>`;
+      msg.innerHTML = `<div class="msg bad">${esc(te(r.error) || t('Không gửi được mã.'))}</div>`;
     }
   }catch(e){
     msg.innerHTML = e.message === 'CONFIG_MISSING'
-      ? '<div class="msg bad">Form chưa được cấu hình API_URL. Xem cảnh báo đỏ ở đầu trang.</div>'
-      : '<div class="msg bad">Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.</div>';
+      ? '<div class="msg bad">' + t('Form chưa được cấu hình API_URL. Xem cảnh báo đỏ ở đầu trang.') + '</div>'
+      : '<div class="msg bad">' + t('Không kết nối được tới hệ thống. Kiểm tra lại API_URL trong cấu hình.') + '</div>';
   }
 }
 
 function startResendCooldown(){
   const btn = document.getElementById('resendBtn');
-  let left = 30;
-  btn.disabled = true; btn.textContent = `Gửi lại mã (${left}s)`;
+  resendLeft = 30; btn.disabled = true; updateResendLabel();
   clearInterval(resendTimer);
   resendTimer = setInterval(()=>{
-    left -= 1;
-    if (left <= 0){ clearInterval(resendTimer); btn.disabled=false; btn.textContent='Gửi lại mã'; }
-    else btn.textContent = `Gửi lại mã (${left}s)`;
+    resendLeft -= 1;
+    if (resendLeft <= 0){ clearInterval(resendTimer); btn.disabled = false; }
+    updateResendLabel();
   }, 1000);
 }
 
@@ -403,8 +829,8 @@ function backToEmail(){
 async function verifyOtp(){
   const otp = document.getElementById('otpCode').value.trim();
   const msg = document.getElementById('loginMsg');
-  if (!otp){ msg.innerHTML='<div class="msg bad">Vui lòng nhập mã xác thực.</div>'; return; }
-  msg.innerHTML = '<div class="hint">Đang xác thực…</div>';
+  if (!otp){ msg.innerHTML='<div class="msg bad">' + t('Vui lòng nhập mã xác thực.') + '</div>'; return; }
+  msg.innerHTML = '<div class="hint">' + t('Đang xác thực…') + '</div>';
   try{
     const r = await api({action:'verifyOtp', email:pendingEmail, otp});
     if (r.ok){
@@ -412,9 +838,9 @@ async function verifyOtp(){
       sessionStorage.setItem('pbs_session', JSON.stringify(session));
       enterApp(pendingIntent);
     }else{
-      msg.innerHTML = `<div class="msg bad">${r.error||'Mã không đúng.'}</div>`;
+      msg.innerHTML = `<div class="msg bad">${esc(te(r.error) || t('Mã không đúng.'))}</div>`;
     }
-  }catch(e){ msg.innerHTML = '<div class="msg bad">Lỗi kết nối tới hệ thống.</div>'; }
+  }catch(e){ msg.innerHTML = '<div class="msg bad">' + t('Lỗi kết nối tới hệ thống.') + '</div>'; }
 }
 
 function logout(){ sessionStorage.removeItem('pbs_session'); session=null; location.reload(); }
@@ -424,19 +850,24 @@ function enterApp(landOn){
   document.getElementById('app').style.display='';
   renderBrandbar('brandbarApp');
   document.getElementById('whoami').textContent = session.name ? `${session.name} (${session.email})` : session.email;
-  if (session.role === 'Admin') document.getElementById('tabAdmin').style.display='';
+  const isV = session.role === 'Vendor', isA = session.role === 'Admin';
+  const show = (id, on)=>{ document.getElementById(id).style.display = on ? '' : 'none'; };
+  show('tabForm', !isV); show('tabMine', !isV); show('tabAdmin', isA); show('tabVendor', isV); show('tabCn', isV || isA);
   if (!document.getElementById('lineItems').children.length) addLine();
-  showView(landOn || 'form');
+  fillFilters();
+  showView(isV ? 'vendor' : (landOn === 'vendor' || landOn === 'cn' ? 'form' : (landOn || 'form')));
 }
 
 function showView(v){
-  ['form','mine','admin'].forEach(x=>{
+  ['form','mine','admin','vendor','cn'].forEach(x=>{
     document.getElementById('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active', v===x);
     document.getElementById('view'+x[0].toUpperCase()+x.slice(1)).style.display = v===x ? '' : 'none';
   });
   if (v==='form') ensureMap();
   if (v==='admin') loadSubmissions();
   if (v==='mine') loadMine();
+  if (v==='vendor') loadVendor();
+  if (v==='cn') loadCn();
 }
 
 // ====== Form đăng ký ======
@@ -457,9 +888,9 @@ function readForm(){
 
 function validate(d){
   const req=['company','contact','customer','taxcode','project'];
-  for (const k of req) if (!d[k]) return 'Vui lòng điền đủ các trường có dấu *.';
-  if (!d.lines.length) return 'Vui lòng chọn ít nhất 1 model sản phẩm.';
-  if (d.lat===null || d.lng===null) return 'Vui lòng chọn vị trí triển khai dự án trên bản đồ.';
+  for (const k of req) if (!d[k]) return t('Vui lòng điền đủ các trường có dấu *.');
+  if (!d.lines.length) return t('Vui lòng chọn ít nhất 1 model sản phẩm.');
+  if (d.lat===null || d.lng===null) return t('Vui lòng chọn vị trí triển khai dự án trên bản đồ.');
   return null;
 }
 
@@ -467,32 +898,35 @@ async function submitForm(){
   const msg = document.getElementById('formMsg');
   const data = readForm();
   const err = validate(data);
-  if (err){ msg.innerHTML = `<div class="msg bad">${err}</div>`; return; }
-  msg.innerHTML = '<div class="hint">Đang gửi…</div>';
+  if (err){ msg.innerHTML = `<div class="msg bad">${esc(err)}</div>`; return; }
+  msg.innerHTML = '<div class="hint">' + t('Đang gửi…') + '</div>';
   try{
     const r = await api(Object.assign({action:'submit', email:session.email, token:session.token}, data));
     if (r.ok){
-      msg.innerHTML = '<div class="msg ok">Đã gửi đăng ký thành công' + (r.emailSent?' và email xác nhận đã gửi tới hộp thư của bạn':' (email xác nhận không gửi được' + (r.emailError?': '+esc(r.emailError):'') + ', nhưng dự án đã được ghi nhận)') + '. EAVN sẽ xem xét và cập nhật trạng thái, giá &amp; % rebate.</div>';
+      msg.innerHTML = '<div class="msg ok">' + esc(r.emailSent
+        ? t('Đã gửi đăng ký thành công và email xác nhận đã gửi tới hộp thư của bạn. EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.')
+        : t('Đã gửi đăng ký thành công (email xác nhận không gửi được{err}, nhưng dự án đã được ghi nhận). EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.', {err: r.emailError ? ': ' + r.emailError : ''})) + '</div>';
       ['f_company','f_contact','f_customer','f_taxcode','f_industry','f_project','f_desc','f_value','f_close','f_competitor','addrSearch','f_address'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('lineItems').innerHTML=''; addLine();
       document.getElementById('dupWarning').innerHTML='';
       selectedLat=null; selectedLng=null;
       clearMarker();
     }else{
-      msg.innerHTML = `<div class="msg bad">${r.error||'Gửi thất bại.'}</div>`;
+      msg.innerHTML = `<div class="msg bad">${esc(te(r.error) || t('Gửi thất bại.'))}</div>`;
     }
-  }catch(e){ msg.innerHTML = '<div class="msg bad">Lỗi kết nối tới hệ thống.</div>'; }
+  }catch(e){ msg.innerHTML = '<div class="msg bad">' + t('Lỗi kết nối tới hệ thống.') + '</div>'; }
 }
 
 // ====== Dữ liệu dùng chung cho Admin + Dự án của tôi ======
 function parseLines(row){ try{ return JSON.parse(row.ProductLinesJSON||'[]'); }catch(e){ return []; } }
 function esc(v){ return (v==null?'':String(v)).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
-function fmtMoney(v){ const n=parseFloat(v); return isNaN(n)?'': n.toLocaleString('vi-VN') + ' đ'; }
+function fmtMoney(v){ const n=parseFloat(v); if (isNaN(n)) return ''; return LANG === 'vi' ? n.toLocaleString('vi-VN') + ' đ' : n.toLocaleString('en-US') + ' VND'; }
+function fmtVendor(v){ const n=parseFloat(v); if (isNaN(n)) return ''; return n.toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-US', {maximumFractionDigits:2}) + ' ' + CONFIG.VENDOR_CCY; }
 function priceAfterRebate(price, rebatePct){ const p=parseFloat(price), r=parseFloat(rebatePct)||0; return isNaN(p)?null: p*(1-r/100); }
 
 function duplicateTaxcodes(rows){
   const count={};
-  rows.forEach(r=>{ const t=String(r.MaSoThue||'').trim(); if(t) count[t]=(count[t]||0)+1; });
+  rows.forEach(r=>{ const k=String(r.MaSoThue||'').trim(); if(k) count[k]=(count[k]||0)+1; });
   return count;
 }
 
@@ -513,23 +947,23 @@ function renderAdminList(rows){
     const card = document.createElement('div'); card.className='subcard';
     card.innerHTML = `<div class="subcard-head">
       <div>
-        <b>${esc(s.TenDuAn)}</b> ${isDup?'<span class="dup-badge">⚠️ Trùng mã số thuế</span>':''}<br>
+        <b>${esc(s.TenDuAn)}</b> ${isDup?'<span class="dup-badge">'+esc(t('⚠️ Trùng mã số thuế'))+'</span>':''}<br>
         <span class="meta">${date} · ${esc(s.CongTyDoiTac)} (${esc(s.NguoiDangKy)}, ${esc(s.Email)})</span><br>
-        <span class="meta">KH: ${esc(s.KhachHangCuoi)} — MST: ${esc(s.MaSoThue)} · Vị trí: ${esc(s.ViTriDiaChi)}</span><br>
-        <span class="meta">Giá trị ước tính: ${esc(s.GiaTriUocTinh)} · Dự kiến chốt: ${esc(s.NgayDuKienChot)}</span>
+        <span class="meta">${t('KH')}: ${esc(s.KhachHangCuoi)} — ${t('MST')}: ${esc(s.MaSoThue)} · ${t('Vị trí')}: ${esc(s.ViTriDiaChi)}</span><br>
+        <span class="meta">${t('Giá trị ước tính')}: ${esc(s.GiaTriUocTinh)} · ${t('Dự kiến chốt')}: ${esc(s.NgayDuKienChot)}</span>
       </div>
       <div></div>
     </div>`;
     const ctrlDiv = card.querySelector('.subcard-head > div:last-child');
     const sel = document.createElement('select');
-    ['Submitted','UnderReview','Approved','Rejected'].forEach(opt=>{
-      const o=document.createElement('option'); o.value=opt; o.textContent=opt; if((s.TrangThai||'Submitted')===opt) o.selected=true; sel.appendChild(o);
+    ['Submitted','UnderReview','Approved','Rejected','Won','Lost'].forEach(opt=>{
+      const o=document.createElement('option'); o.value=opt; o.textContent=statusLabel(opt); if((s.TrangThai||'Submitted')===opt) o.selected=true; sel.appendChild(o);
     });
-    const noteInput=document.createElement('input'); noteInput.value=s.GhiChuNoiBo||''; noteInput.placeholder='Ghi chú nội bộ'; noteInput.style.marginTop='6px';
-    const saveStatus=()=>updateStatus(s.ID, sel.value, noteInput.value);
+    const noteInput=document.createElement('input'); noteInput.value=s.GhiChuNoiBo||''; noteInput.placeholder=t('Ghi chú nội bộ'); noteInput.style.marginTop='6px';
+    const saveStatus=()=>updateStatus(s.ID, sel.value, noteInput.value, s.TrangThai||'Submitted');
     sel.onchange=saveStatus; noteInput.onblur=saveStatus;
     const quoteBtn=document.createElement('button'); quoteBtn.className='btn-ghost btn-sm'; quoteBtn.style.marginTop='6px'; quoteBtn.style.display='block';
-    quoteBtn.textContent='📧 Gửi báo giá cho đại lý';
+    quoteBtn.textContent=t('📧 Gửi báo giá cho đại lý');
     const quoteMsg=document.createElement('div'); quoteMsg.className='hint';
     quoteBtn.onclick=()=>sendQuote(s.ID, quoteBtn, quoteMsg);
     ctrlDiv.appendChild(sel); ctrlDiv.appendChild(noteInput); ctrlDiv.appendChild(quoteBtn); ctrlDiv.appendChild(quoteMsg);
@@ -537,36 +971,50 @@ function renderAdminList(rows){
     const lines = parseLines(s);
     if (!lines.length){
       const empty=document.createElement('div'); empty.className='hint';
-      empty.textContent = 'Dự án này chưa có model nào được ghi nhận.';
+      empty.textContent = t('Dự án này chưa có model nào được ghi nhận.');
       card.appendChild(empty);
       list.appendChild(card);
       return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
-    tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (VNĐ, đã gồm VAT)</th><th>% Rebate</th><th>Giá sau rebate (VNĐ)</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Rebate Vendor / đơn vị')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th></tr></thead>';
+    const vAmts = parseJSONSafe(s.VendorRebateJSON, []);
     const tbody=document.createElement('tbody');
     lines.forEach((ln,idx)=>{
       const tr=document.createElement('tr');
+      const tdV=document.createElement('td'); tdV.textContent = (vAmts[idx] !== undefined && vAmts[idx] !== '') ? fmtVendor(vAmts[idx]) : '-';
       const tdM=document.createElement('td'); tdM.textContent=ln.model;
       const tdQ=document.createElement('td'); tdQ.textContent=ln.qty;
       const tdP=document.createElement('td'); const pIn=document.createElement('input'); pIn.type='number'; pIn.value=ln.price||''; tdP.appendChild(pIn);
       const tdR=document.createElement('td'); const rIn=document.createElement('input'); rIn.type='number'; rIn.value=ln.rebatePct||''; tdR.appendChild(rIn);
       const tdF=document.createElement('td'); tdF.className='hint';
-      const refreshFinal=()=>{ const f=priceAfterRebate(pIn.value, rIn.value); tdF.textContent = f===null?'-':fmtMoney(f)+'/đv'; };
+      const refreshFinal=()=>{ const f=priceAfterRebate(pIn.value, rIn.value); tdF.textContent = f===null?'-':fmtMoney(f)+t('/đv'); };
       const saveLines=()=>{ lines[idx].price=pIn.value; lines[idx].rebatePct=rIn.value; updateLines(s.ID, lines); };
       pIn.oninput=refreshFinal; rIn.oninput=refreshFinal;
       pIn.onblur=saveLines; rIn.onblur=saveLines;
       refreshFinal();
-      tr.append(tdM,tdQ,tdP,tdR,tdF); tbody.appendChild(tr);
+      tr.append(tdM,tdQ,tdP,tdR,tdF,tdV); tbody.appendChild(tr);
     });
     tbl.appendChild(tbody);
     card.appendChild(tbl);
+    const vTot = lines.reduce((sum,ln,i)=>{ const a=parseFloat(vAmts[i]); return isNaN(a) ? sum : sum + a*(parseFloat(ln.qty)||0); }, 0);
+    const info = [];
+    if (vAmts.some(x=>x!=='' && x!==undefined)) info.push(t('Tổng rebate Vendor') + ': ' + fmtVendor(vTot));
+    if (s.VendorNote) info.push(t('Ghi chú Vendor') + ': ' + s.VendorNote);
+    if (s.NgayWon) info.push(t('Ngày Won') + ': ' + String(s.NgayWon).slice(0,10));
+    if (s.SoCN) info.push(t('Số CN') + ': ' + s.SoCN);
+    if (info.length){ const d=document.createElement('div'); d.className='vtotal'; d.textContent = info.join('  ·  '); card.appendChild(d); }
     list.appendChild(card);
   });
 }
 
-async function updateStatus(id, status, note){
-  try{ await api({action:'updateStatus', email:session.email, token:session.token, id, status, note}); }catch(e){}
+function parseJSONSafe(s, def){ try{ const v = JSON.parse(s); return (v === null || v === undefined) ? def : v; }catch(e){ return def; } }
+
+async function updateStatus(id, status, note, prevStatus){
+  try{
+    const r = await api({action:'updateStatus', email:session.email, token:session.token, id, status, note});
+    if (!r.ok){ alert(te(r.error) || t('Gửi thất bại.')); loadSubmissions(); }
+  }catch(e){}
 }
 
 async function updateLines(id, lines){
@@ -574,11 +1022,11 @@ async function updateLines(id, lines){
 }
 
 async function sendQuote(id, btn, msgEl){
-  btn.disabled = true; msgEl.textContent = 'Đang gửi…';
+  btn.disabled = true; msgEl.textContent = t('Đang gửi…');
   try{
     const r = await api({action:'sendQuote', email:session.email, token:session.token, id});
-    msgEl.textContent = r.ok ? '✓ Đã gửi báo giá.' : (r.error || 'Gửi thất bại.');
-  }catch(e){ msgEl.textContent = 'Lỗi kết nối.'; }
+    msgEl.textContent = r.ok ? t('✓ Đã gửi báo giá.') : (te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ msgEl.textContent = t('Lỗi kết nối.'); }
   btn.disabled = false;
 }
 
@@ -587,7 +1035,8 @@ function exportExcel(){
   allSubs.forEach(s=>{
     const lines = parseLines(s);
     const date = s.Timestamp ? new Date(s.Timestamp).toISOString().slice(0,10) : '';
-    (lines.length?lines:[{model:'',qty:'',price:'',rebatePct:''}]).forEach(ln=>{
+    const vAmts = parseJSONSafe(s.VendorRebateJSON, []);
+    (lines.length?lines:[{model:'',qty:'',price:'',rebatePct:''}]).forEach((ln,li)=>{
       const finalUnit = priceAfterRebate(ln.price, ln.rebatePct);
       const qty = parseFloat(ln.qty)||0;
       rows.push({
@@ -596,7 +1045,10 @@ function exportExcel(){
         MoTa:s.MoTa, GiaTriUocTinh:s.GiaTriUocTinh, NgayDuKienChot:s.NgayDuKienChot, DoiThu:s.DoiThu,
         ViTriDiaChi:s.ViTriDiaChi, Model:ln.model, SoLuong:ln.qty, DonGia_VND_DaGomVAT:ln.price, PhanTramRebate:ln.rebatePct,
         GiaSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit):'', ThanhTienSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit*qty):'',
-        TrangThai:s.TrangThai, GhiChuNoiBo:s.GhiChuNoiBo
+        TrangThai:s.TrangThai, GhiChuNoiBo:s.GhiChuNoiBo,
+        ['RebateVendor_'+CONFIG.VENDOR_CCY+'_moiDonVi']: (vAmts[li] !== undefined ? vAmts[li] : ''),
+        ['RebateVendor_'+CONFIG.VENDOR_CCY+'_thanhTien']: (vAmts[li] !== undefined && vAmts[li] !== '' ? (parseFloat(vAmts[li])||0)*(parseFloat(ln.qty)||0) : ''),
+        NgayWon: s.NgayWon ? String(s.NgayWon).slice(0,10) : '', SoCN: s.SoCN || '', GhiChuVendor: s.VendorNote || ''
       });
     });
   });
@@ -609,7 +1061,7 @@ function exportExcel(){
 async function loadMine(){
   try{
     const r = await api({action:'listMine', email:session.email, token:session.token});
-    if (r.ok){ renderMineList(r.rows); }
+    if (r.ok){ mineRows = r.rows; renderMineList(mineRows); }
   }catch(e){}
 }
 
@@ -621,21 +1073,21 @@ function renderMineList(rows){
     card.innerHTML = `<div class="subcard-head">
       <div>
         <b>${esc(s.TenDuAn)}</b><br>
-        <span class="meta">${date} · KH: ${esc(s.KhachHangCuoi)} — MST: ${esc(s.MaSoThue)}</span><br>
-        <span class="meta">Vị trí: ${esc(s.ViTriDiaChi)}</span>
+        <span class="meta">${date} · ${t('KH')}: ${esc(s.KhachHangCuoi)} — ${t('MST')}: ${esc(s.MaSoThue)}</span><br>
+        <span class="meta">${t('Vị trí')}: ${esc(s.ViTriDiaChi)}</span>
       </div>
-      <div><span class="badge st-${s.TrangThai||'Submitted'}">${esc(s.TrangThai||'Submitted')}</span></div>
+      <div><span class="badge st-${s.TrangThai||'Submitted'}">${esc(statusLabel(s.TrangThai||'Submitted'))}</span></div>
     </div>`;
     const lines = parseLines(s);
     if (!lines.length){
       const empty=document.createElement('div'); empty.className='hint';
-      empty.textContent = 'Dự án này chưa có model nào được ghi nhận.';
+      empty.textContent = t('Dự án này chưa có model nào được ghi nhận.');
       card.appendChild(empty);
       list.appendChild(card);
       return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
-    tbl.innerHTML = '<thead><tr><th>Model</th><th>SL</th><th>Đơn giá (VNĐ, đã gồm VAT)</th><th>% Rebate</th><th>Giá sau rebate (VNĐ)</th><th>Thành tiền sau rebate (VNĐ)</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Thành tiền sau rebate (VNĐ)')) + '</th></tr></thead>';
     const tbody=document.createElement('tbody');
     let totalBefore=0, totalAfter=0, hasPrice=false;
     lines.forEach(ln=>{
@@ -645,7 +1097,7 @@ function renderMineList(rows){
       if (lineFinalTotal!==null){ totalBefore += price*qty; totalAfter += lineFinalTotal; hasPrice=true; }
       const tr=document.createElement('tr');
       tr.innerHTML = `<td>${esc(ln.model)}</td><td>${esc(ln.qty)}</td>
-        <td>${ln.price?fmtMoney(ln.price):'<span class="hint">Chưa có giá</span>'}</td>
+        <td>${ln.price?fmtMoney(ln.price):'<span class="hint">'+esc(t('Chưa có giá'))+'</span>'}</td>
         <td>${ln.rebatePct?esc(ln.rebatePct)+'%':'-'}</td>
         <td>${finalUnit!==null?fmtMoney(finalUnit):'-'}</td>
         <td><b>${lineFinalTotal!==null?fmtMoney(lineFinalTotal):'-'}</b></td>`;
@@ -654,20 +1106,192 @@ function renderMineList(rows){
     tbl.appendChild(tbody);
     card.appendChild(tbl);
     if (hasPrice){
-      const t=document.createElement('div'); t.className='total-line';
-      t.innerHTML = 'Tổng trước rebate (đã gồm VAT): ' + fmtMoney(totalBefore) + '<br>Tổng SAU rebate (giá cuối cùng, đã gồm VAT): <span style="color:var(--ok)">' + fmtMoney(totalAfter) + '</span>';
-      card.appendChild(t);
+      const totEl=document.createElement('div'); totEl.className='total-line';
+      totEl.innerHTML = esc(t('Tổng trước rebate (đã gồm VAT)')) + ': ' + fmtMoney(totalBefore) + '<br>' + esc(t('Tổng SAU rebate (giá cuối cùng, đã gồm VAT)')) + ': <span style="color:var(--ok)">' + fmtMoney(totalAfter) + '</span>';
+      card.appendChild(totEl);
     }
     if (s.GhiChuNoiBo){
-      const n=document.createElement('div'); n.className='hint'; n.textContent='Ghi chú từ EAVN: ' + s.GhiChuNoiBo;
+      const n=document.createElement('div'); n.className='hint'; n.textContent=t('Ghi chú từ EAVN') + ': ' + s.GhiChuNoiBo;
       card.appendChild(n);
     }
     list.appendChild(card);
   });
 }
 
+// ====== VENDOR (@aurcore.net) & TỔNG HỢP CN ======
+function fillFilters(){
+  const vf = document.getElementById('vFilter'), cf = document.getElementById('cnFilter');
+  vf.innerHTML = ''; cf.innerHTML = '';
+  [['all', t('Tất cả trạng thái')]].concat(['Submitted','UnderReview','Approved','Rejected','Won','Lost'].map(s=>[s, statusLabel(s)])).forEach(([v,l])=>{
+    const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === vFilterVal) o.selected = true; vf.appendChild(o);
+  });
+  [['all', t('Tất cả')], ['pending', t('Chưa chốt CN')], ['issued', t('Đã chốt CN')]].forEach(([v,l])=>{
+    const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === cnFilterVal) o.selected = true; cf.appendChild(o);
+  });
+}
+
+function vendorMsg(id, text, cls){
+  const el = document.getElementById(id);
+  el.innerHTML = text ? '<div class="msg ' + (cls||'bad') + '">' + esc(text) + '</div>' : '';
+}
+
+async function loadVendor(){
+  try{
+    const r = await api({action:'listVendor', email:session.email, token:session.token});
+    if (r.ok){ vendorRows = r.rows; vendorMsg('vendorMsg',''); renderVendorList(); }
+    else vendorMsg('vendorMsg', te(r.error) || t('Lỗi kết nối.'));
+  }catch(e){ vendorMsg('vendorMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+function renderVendorList(){
+  const list = document.getElementById('vendorList'); list.innerHTML = '';
+  const rows = vendorRows.filter(r=> vFilterVal === 'all' || r.TrangThai === vFilterVal).slice().reverse();
+  if (!rows.length){ list.innerHTML = '<div class="hint">' + esc(t('Chưa có dự án nào.')) + '</div>'; return; }
+  rows.forEach(s=>{
+    const locked = !!s.SoCN;
+    const card = document.createElement('div'); card.className = 'subcard';
+    const meta = [];
+    meta.push(esc(s.Timestamp) + ' · ' + esc(t('Đối tác')) + ': ' + esc(s.CongTyDoiTac) + ' (' + esc(s.NguoiDangKy) + ')');
+    meta.push(esc(t('KH')) + ': ' + esc(s.KhachHangCuoi) + ' — ' + esc(t('MST')) + ': ' + esc(s.MaSoThue) + (s.Nganh ? ' · ' + esc(t('Ngành')) + ': ' + esc(s.Nganh) : ''));
+    meta.push(esc(t('Vị trí')) + ': ' + esc(s.ViTriDiaChi));
+    meta.push(esc(t('Giá trị ước tính')) + ': ' + esc(s.GiaTriUocTinh) + ' · ' + esc(t('Dự kiến chốt')) + ': ' + esc(s.NgayDuKienChot) + (s.DoiThu ? ' · ' + esc(t('Đối thủ')) + ': ' + esc(s.DoiThu) : ''));
+    if (s.MoTa) meta.push(esc(t('Mô tả')) + ': ' + esc(s.MoTa));
+    if (s.NgayWon) meta.push(esc(t('Ngày Won')) + ': ' + esc(s.NgayWon));
+    card.innerHTML = '<div class="subcard-head"><div><b>' + esc(s.TenDuAn) + '</b><br>' +
+      meta.map(m=>'<span class="meta">' + m + '</span>').join('<br>') + '</div>' +
+      '<div><span class="badge st-' + esc(s.TrangThai) + '">' + esc(statusLabel(s.TrangThai)) + '</span></div></div>';
+
+    const tbl = document.createElement('table'); tbl.className = 'lines-table';
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Rebate / đơn vị')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Thành tiền rebate')) + '</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    const inputs = [];
+    const totEl = document.createElement('div'); totEl.className = 'vtotal';
+    const recalc = ()=>{
+      let tot = 0;
+      s.Lines.forEach((ln,i)=>{
+        const a = parseFloat(inputs[i].value), q = parseFloat(ln.qty) || 0;
+        const cell = inputs[i]._cell; cell.textContent = isNaN(a) ? '-' : fmtVendor(a*q);
+        if (!isNaN(a)) tot += a*q;
+      });
+      totEl.textContent = t('Tổng rebate cho dự án') + ': ' + fmtVendor(tot);
+    };
+    s.Lines.forEach(ln=>{
+      const tr = document.createElement('tr');
+      const tdM = document.createElement('td'); tdM.textContent = ln.model;
+      const tdQ = document.createElement('td'); tdQ.textContent = ln.qty;
+      const tdI = document.createElement('td'); const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = 'any'; inp.value = ln.rebate; inp.disabled = locked; tdI.appendChild(inp);
+      const tdT = document.createElement('td'); inp._cell = tdT;
+      inp.oninput = recalc; inputs.push(inp);
+      tr.append(tdM, tdQ, tdI, tdT); tb.appendChild(tr);
+    });
+    tbl.appendChild(tb); card.appendChild(tbl); card.appendChild(totEl); recalc();
+
+    const note = document.createElement('textarea'); note.value = s.VendorNote || ''; note.placeholder = t('Ghi chú tiến độ / điều kiện rebate'); note.disabled = locked; note.style.marginTop = '8px';
+    card.appendChild(note);
+    const msg = document.createElement('div'); msg.className = 'hint';
+    if (locked){
+      msg.textContent = t('🔒 Đã chốt CN {no} — không thể sửa rebate.', {no: s.SoCN});
+      card.appendChild(msg);
+    }else{
+      const btn = document.createElement('button'); btn.className = 'btn-primary btn-sm'; btn.style.marginTop = '8px'; btn.textContent = t('💾 Lưu rebate');
+      btn.onclick = async ()=>{
+        for (const inp of inputs){ if (inp.value !== '' && !(parseFloat(inp.value) >= 0)){ msg.textContent = t('Giá trị rebate không hợp lệ.'); return; } }
+        btn.disabled = true; msg.textContent = t('Đang gửi…');
+        try{
+          const r = await api({action:'saveVendorRebate', email:session.email, token:session.token, id:s.ID, amounts:inputs.map(i=>i.value), note:note.value});
+          msg.textContent = r.ok ? t('Đã lưu.') : (te(r.error) || t('Gửi thất bại.'));
+          if (r.ok){ s.Lines.forEach((ln,i)=>{ ln.rebate = inputs[i].value; }); s.VendorNote = note.value; }
+        }catch(e){ msg.textContent = t('Lỗi kết nối.'); }
+        btn.disabled = false;
+      };
+      card.appendChild(btn); card.appendChild(msg);
+    }
+    list.appendChild(card);
+  });
+}
+
+async function loadCn(){
+  try{
+    const r = await api({action:'cnSummary', email:session.email, token:session.token,
+      from: document.getElementById('cnFrom').value, to: document.getElementById('cnTo').value});
+    if (r.ok){ cnRows = r.rows; vendorMsg('cnMsg',''); renderCnList(); }
+    else vendorMsg('cnMsg', te(r.error) || t('Lỗi kết nối.'));
+  }catch(e){ vendorMsg('cnMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+function cnVisible(){
+  return cnRows.filter(r=> cnFilterVal === 'all' || (cnFilterVal === 'pending' ? !r.SoCN : !!r.SoCN));
+}
+
+function renderCnList(){
+  const isA = session && session.role === 'Admin';
+  document.getElementById('cnAdminBar').style.display = isA ? '' : 'none';
+  document.getElementById('cnExportBtn').style.display = isA ? '' : 'none';
+  const box = document.getElementById('cnList'); box.innerHTML = '';
+  const rows = cnVisible();
+  if (!rows.length){ box.innerHTML = '<div class="hint" style="margin-top:8px;">' + esc(t('Không có dự án Won nào trong khoảng đã chọn.')) + '</div>'; return; }
+  let sum = 0, sumPending = 0, sumIssued = 0;
+  rows.forEach(r=>{ sum += r.RebateTotal; if (r.SoCN) sumIssued += r.RebateTotal; else sumPending += r.RebateTotal; });
+  const tbl = document.createElement('table'); tbl.className = 'lines-table'; tbl.style.marginTop = '10px';
+  tbl.innerHTML = '<thead><tr>' + (isA ? '<th></th>' : '') + '<th>' + esc(t('Ngày Won')) + '</th><th>' + esc(t('Dự án')) + '</th><th>' + esc(t('Đối tác')) + '</th><th>' + esc(t('Khách hàng')) + '</th><th>' +
+    esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Số CN')) + '</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    let first = '';
+    if (isA) first = r.SoCN ? '<td></td>' : '<td><input type="checkbox" class="cn-chk" value="' + esc(r.ID) + '" style="width:auto"></td>';
+    tr.innerHTML = first + '<td>' + esc(r.NgayWon) + '</td><td>' + esc(r.TenDuAn) + '</td><td>' + esc(r.CongTyDoiTac) + '</td><td>' + esc(r.KhachHangCuoi) + '</td><td>' +
+      esc(fmtVendor(r.RebateTotal)) + '</td><td>' + esc(r.SoCN) + '</td>';
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb); box.appendChild(tbl);
+  const tot = document.createElement('div'); tot.className = 'vtotal';
+  tot.innerHTML = esc(t('Tổng rebate đang hiển thị')) + ': ' + esc(fmtVendor(sum)) + '<br>' + esc(t('Chưa chốt CN')) + ': ' + esc(fmtVendor(sumPending)) + ' · ' + esc(t('Đã chốt CN')) + ': ' + esc(fmtVendor(sumIssued));
+  box.appendChild(tot);
+}
+
+function cnSelectPending(){ document.querySelectorAll('.cn-chk').forEach(c=>{ c.checked = true; }); }
+
+async function issueCn(){
+  const ids = Array.from(document.querySelectorAll('.cn-chk')).filter(c=>c.checked).map(c=>c.value);
+  if (!ids.length){ vendorMsg('cnMsg', t('Vui lòng chọn ít nhất 1 dự án.')); return; }
+  const total = cnRows.filter(r=>ids.indexOf(r.ID) >= 0).reduce((s,r)=>s + r.RebateTotal, 0);
+  if (!confirm(t('Chốt CN cho {n} dự án, tổng rebate {total}?', {n: ids.length, total: fmtVendor(total)}))) return;
+  try{
+    const r = await api({action:'issueCN', email:session.email, token:session.token, ids, soCN: document.getElementById('cnNumber').value.trim()});
+    if (r.ok){
+      vendorMsg('cnMsg', t('Đã chốt CN {no}: {n} dự án, tổng rebate {total}.', {no: r.soCN, n: r.count, total: fmtVendor(r.total)}), 'ok');
+      document.getElementById('cnNumber').value = '';
+      loadCn();
+    }else vendorMsg('cnMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('cnMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+function exportCnExcel(){
+  const rows = [];
+  cnVisible().forEach(r=>{
+    (r.Lines.length ? r.Lines : [{model:'', qty:'', rebate:''}]).forEach(ln=>{
+      const a = parseFloat(ln.rebate), q = parseFloat(ln.qty) || 0;
+      rows.push({
+        NgayWon:r.NgayWon, DuAn:r.TenDuAn, DoiTac:r.CongTyDoiTac, KhachHang:r.KhachHangCuoi, MaSoThue:r.MaSoThue,
+        Model:ln.model, SoLuong:ln.qty,
+        ['Rebate_'+CONFIG.VENDOR_CCY+'_moiDonVi']: isNaN(a) ? '' : a,
+        ['Rebate_'+CONFIG.VENDOR_CCY+'_thanhTien']: isNaN(a) ? '' : a*q,
+        ['TongRebateDuAn_'+CONFIG.VENDOR_CCY]: r.RebateTotal, SoCN:r.SoCN, NgayCN:r.NgayCN
+      });
+    });
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'CN');
+  XLSX.writeFile(wb, 'Aurcore_CN_Vendor_Rebate.xlsx');
+}
+
 (function init(){
+  document.documentElement.lang = (LANG === 'zh') ? 'zh-CN' : LANG;
   renderBrandbar('brandbarLogin');
+  translateStatic(document.getElementById('app'));
+  translateStatic(document.getElementById('loginScreen'));
+  updateResendLabel();
   showConfigWarningIfNeeded();
   const saved = sessionStorage.getItem('pbs_session');
   if (saved){ session = JSON.parse(saved); enterApp(); document.getElementById('loginScreen').style.display='none'; }

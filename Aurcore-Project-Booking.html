@@ -77,6 +77,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   <div class="tab active" id="tabForm" onclick="showView('form')">Đăng ký dự án</div>
   <div class="tab" id="tabMine" onclick="showView('mine')">Dự án của tôi</div>
   <div class="tab" id="tabAdmin" style="display:none" onclick="showView('admin')">Quản trị</div>
+  <div class="tab" id="tabSettings" style="display:none" onclick="showView('settings')">Thiết lập</div>
   <div class="tab" id="tabVendor" style="display:none" onclick="showView('vendor')">Dự án đăng ký</div>
   <div class="tab" id="tabCn" style="display:none" onclick="showView('cn')">Tổng hợp CN</div>
   <button class="btn-ghost btn-sm" style="margin-left:auto" onclick="logout()">Đăng xuất</button>
@@ -128,13 +129,40 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   </div>
 </div>
 
+<div id="viewSettings" style="display:none;">
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:15px;">Phân quyền email</h3>
+    <div class="hint" style="margin-bottom:8px;">Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin). Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.</div>
+    <div class="row">
+      <div><label>Email</label><input id="uEmail" type="email"></div>
+      <div><label>Tên hiển thị</label><input id="uName"></div>
+    </div>
+    <div class="row">
+      <div><label>Vai trò</label><select id="uRole" data-noi18n></select></div>
+      <div style="display:flex;align-items:flex-end;"><button class="btn-primary" onclick="addUser()">Thêm / cập nhật</button></div>
+    </div>
+    <div id="usersMsg" data-noi18n></div>
+    <div class="scrollx"><div id="usersList" data-noi18n></div></div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:15px;">Giá nhập khẩu theo model</h3>
+    <div class="hint">Tải file Excel hoặc CSV gồm 2 cột: Model và Giá nhập (ví dụ AES2001P | 1250). Model đã có sẽ được cập nhật giá. Admin và Vendor cùng thấy giá nhập này theo từng model; Vendor nhập % rebate tính trên giá nhập.</div>
+    <input type="file" id="priceFile" accept=".xlsx,.xls,.csv" onchange="readPriceFile(event)" style="margin-top:8px;">
+    <div id="pricePreview" data-noi18n></div>
+    <button class="btn-primary btn-sm" id="priceUploadBtn" style="display:none;margin-top:8px;" onclick="uploadPrices()">Tải bảng giá lên hệ thống</button>
+    <div id="pricesMsg" data-noi18n></div>
+    <div id="pricesMissing" data-noi18n></div>
+    <div class="scrollx" style="max-height:300px;overflow:auto;margin-top:8px;"><div id="pricesList" data-noi18n></div></div>
+  </div>
+</div>
+
 <div id="viewVendor" style="display:none;">
   <div class="card">
     <div class="toolbar">
       <button class="btn-ghost" onclick="loadVendor()">Tải lại</button>
       <select id="vFilter" data-noi18n onchange="vFilterVal=this.value; renderVendorList()" style="width:auto;"></select>
     </div>
-    <div class="hint" style="margin-bottom:8px;">Nhập khoản rebate hỗ trợ cho từng model của dự án. Giá bán của EAVN cho khách hàng không hiển thị với Vendor.</div>
+    <div class="hint" style="margin-bottom:8px;">Nhập % rebate hỗ trợ cho từng model của dự án (tính trên giá nhập khẩu). Giá bán của EAVN cho khách hàng không hiển thị với Vendor.</div>
     <div id="vendorMsg" data-noi18n></div>
     <div id="vendorList" data-noi18n></div>
   </div>
@@ -334,7 +362,7 @@ const DICT = {
  "Gửi email thất bại: ": "Failed to send the email: ",
  "Dự án đăng ký": "Registered projects",
  "Tổng hợp CN": "Credit note (CN) summary",
- "Nhập khoản rebate hỗ trợ cho từng model của dự án. Giá bán của EAVN cho khách hàng không hiển thị với Vendor.": "Enter the support rebate for each model in the project. EAVN selling prices to customers are not shown to the Vendor.",
+ "Nhập % rebate hỗ trợ cho từng model của dự án (tính trên giá nhập khẩu). Giá bán của EAVN cho khách hàng không hiển thị với Vendor.": "Enter the support rebate % for each model in the project (calculated on the import price). EAVN selling prices to customers are not shown to the Vendor.",
  "Từ ngày Won": "Won date from",
  "Đến ngày Won": "Won date to",
  "Xem tổng hợp": "Show summary",
@@ -378,7 +406,43 @@ const DICT = {
  "Chỉ chốt CN cho dự án đã Won và chưa có số CN.": "A CN can only be issued for Won projects without a CN number.",
  "Trạng thái không hợp lệ.": "Invalid status.",
  "Chưa chọn dự án nào.": "No project selected.",
- "Hệ thống đang bận, vui lòng thử lại.": "The system is busy, please try again."
+ "Hệ thống đang bận, vui lòng thử lại.": "The system is busy, please try again.",
+ "Thiết lập": "Settings",
+ "Phân quyền email": "Email roles",
+ "Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin). Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.": "Admin: can view and review all projects and receives an email whenever a new project is registered. Partner: a reseller who registers projects. Vendor: Aurcore (emails ending in @aurcore.net are automatically Vendors unless set to Admin). Removing an email returns that person to the default role the next time they log in.",
+ "Tên hiển thị": "Display name",
+ "Vai trò": "Role",
+ "Thêm / cập nhật": "Add / update",
+ "Giá nhập khẩu theo model": "Import price by model",
+ "Tải file Excel hoặc CSV gồm 2 cột: Model và Giá nhập (ví dụ AES2001P | 1250). Model đã có sẽ được cập nhật giá. Admin và Vendor cùng thấy giá nhập này theo từng model; Vendor nhập % rebate tính trên giá nhập.": "Upload an Excel or CSV file with 2 columns: Model and Import price (for example AES2001P | 1250). Existing models will have their price updated. Admin and Vendor both see this import price per model; the Vendor enters the rebate % on top of the import price.",
+ "Tải bảng giá lên hệ thống": "Upload price list to the system",
+ "Giá nhập": "Import price",
+ "Chưa có giá nhập": "No import price",
+ "Rebate % phải là số từ 0 đến 100.": "Rebate % must be a number from 0 to 100.",
+ "bạn": "you",
+ "Lưu": "Save",
+ "Xoá {email} khỏi danh sách?": "Remove {email} from the list?",
+ "Đã xoá.": "Removed.",
+ "Chưa có giá nhập cho {n} model: {list}": "No import price yet for {n} model(s): {list}",
+ "Đã có giá nhập cho tất cả model trong danh sách.": "Import prices are available for all models in the list.",
+ "Chưa có bảng giá nhập.": "No import price list yet.",
+ "Cập nhật": "Updated",
+ "Không tải được thư viện đọc Excel. Kiểm tra kết nối mạng rồi tải lại trang.": "Could not load the Excel reader library. Check your network connection and reload the page.",
+ "Không đọc được dòng giá hợp lệ nào. File cần 2 cột: Model và Giá nhập.": "No valid price rows found. The file needs 2 columns: Model and Import price.",
+ "Đọc được {n} model hợp lệ, bỏ qua {m} dòng không hợp lệ. Ví dụ: {sample}. Kiểm tra rồi bấm \"Tải bảng giá lên hệ thống\".": "Read {n} valid model(s), skipped {m} invalid row(s). Examples: {sample}. Check them, then click \"Upload price list to the system\".",
+ "Không đọc được file. Hãy dùng file Excel (.xlsx) hoặc CSV có 2 cột: Model và Giá nhập.": "Could not read the file. Please use an Excel (.xlsx) or CSV file with 2 columns: Model and Import price.",
+ "Đã lưu {n} giá nhập (bỏ qua {m} dòng không hợp lệ).": "Saved {n} import price(s) ({m} invalid row(s) skipped).",
+ "Rebate (%)": "Rebate (%)",
+ "Rebate Vendor (%)": "Vendor rebate (%)",
+ "Đại lý (Partner)": "Partner (reseller)",
+ "Vendor (Aurcore)": "Vendor (Aurcore)",
+ "Vai trò không hợp lệ.": "Invalid role.",
+ "Không thể tự hạ quyền của chính mình.": "You cannot lower your own role.",
+ "Không thể tự xoá chính mình.": "You cannot remove yourself.",
+ "Không tìm thấy email này.": "Email not found.",
+ "Thiếu giá nhập khẩu cho model: ": "Missing import price for model: ",
+ "Giá nhập không hợp lệ.": "Invalid import price.",
+ "Chưa có dữ liệu giá nhập để lưu.": "No import price data to save."
 },
  zh: {
  "Đăng ký dự án & theo dõi phê duyệt — xin chào": "项目报备与审批跟踪 — 您好",
@@ -479,7 +543,7 @@ const DICT = {
  "Gửi email thất bại: ": "邮件发送失败：",
  "Dự án đăng ký": "已报备项目",
  "Tổng hợp CN": "贷项通知单（CN）汇总",
- "Nhập khoản rebate hỗ trợ cho từng model của dự án. Giá bán của EAVN cho khách hàng không hiển thị với Vendor.": "请为项目中的每个型号填写支持返利。EAVN 对客户的销售价格不会向厂商显示。",
+ "Nhập % rebate hỗ trợ cho từng model của dự án (tính trên giá nhập khẩu). Giá bán của EAVN cho khách hàng không hiển thị với Vendor.": "请为项目中的每个型号填写支持返利比例（按进口价计算）。EAVN 对客户的销售价格不会向厂商显示。",
  "Từ ngày Won": "赢单日期自",
  "Đến ngày Won": "赢单日期至",
  "Xem tổng hợp": "查看汇总",
@@ -523,7 +587,43 @@ const DICT = {
  "Chỉ chốt CN cho dự án đã Won và chưa có số CN.": "只能为已赢单且尚无 CN 编号的项目开具 CN。",
  "Trạng thái không hợp lệ.": "状态无效。",
  "Chưa chọn dự án nào.": "尚未选择项目。",
- "Hệ thống đang bận, vui lòng thử lại.": "系统繁忙，请稍后重试。"
+ "Hệ thống đang bận, vui lòng thử lại.": "系统繁忙，请稍后重试。",
+ "Thiết lập": "设置",
+ "Phân quyền email": "邮箱权限管理",
+ "Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin). Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.": "Admin：可查看并审核所有项目，有新项目报备时会收到邮件通知。Partner：报备项目的经销商。Vendor：Aurcore（以 @aurcore.net 结尾的邮箱自动为 Vendor，除非被设为 Admin）。删除某个邮箱后，该用户下次登录时将恢复为默认角色。",
+ "Tên hiển thị": "显示名称",
+ "Vai trò": "角色",
+ "Thêm / cập nhật": "添加 / 更新",
+ "Giá nhập khẩu theo model": "各型号进口价",
+ "Tải file Excel hoặc CSV gồm 2 cột: Model và Giá nhập (ví dụ AES2001P | 1250). Model đã có sẽ được cập nhật giá. Admin và Vendor cùng thấy giá nhập này theo từng model; Vendor nhập % rebate tính trên giá nhập.": "上传包含两列的 Excel 或 CSV 文件：型号（Model）和进口价（例如 AES2001P | 1250）。已存在的型号将更新价格。Admin 与厂商均可按型号查看该进口价；厂商按进口价填写返利比例。",
+ "Tải bảng giá lên hệ thống": "将价格表上传到系统",
+ "Giá nhập": "进口价",
+ "Chưa có giá nhập": "暂无进口价",
+ "Rebate % phải là số từ 0 đến 100.": "返利比例必须是 0 到 100 之间的数字。",
+ "bạn": "您",
+ "Lưu": "保存",
+ "Xoá {email} khỏi danh sách?": "确定将 {email} 从列表中删除吗？",
+ "Đã xoá.": "已删除。",
+ "Chưa có giá nhập cho {n} model: {list}": "有 {n} 个型号暂无进口价：{list}",
+ "Đã có giá nhập cho tất cả model trong danh sách.": "列表中的所有型号均已有进口价。",
+ "Chưa có bảng giá nhập.": "尚无进口价表。",
+ "Cập nhật": "更新时间",
+ "Không tải được thư viện đọc Excel. Kiểm tra kết nối mạng rồi tải lại trang.": "无法加载 Excel 读取库。请检查网络连接后刷新页面。",
+ "Không đọc được dòng giá hợp lệ nào. File cần 2 cột: Model và Giá nhập.": "未读取到有效的价格行。文件需包含两列：型号（Model）和进口价。",
+ "Đọc được {n} model hợp lệ, bỏ qua {m} dòng không hợp lệ. Ví dụ: {sample}. Kiểm tra rồi bấm \"Tải bảng giá lên hệ thống\".": "读取到 {n} 个有效型号，跳过 {m} 行无效数据。示例：{sample}。请核对后点击“将价格表上传到系统”。",
+ "Không đọc được file. Hãy dùng file Excel (.xlsx) hoặc CSV có 2 cột: Model và Giá nhập.": "无法读取文件。请使用包含两列（型号和进口价）的 Excel（.xlsx）或 CSV 文件。",
+ "Đã lưu {n} giá nhập (bỏ qua {m} dòng không hợp lệ).": "已保存 {n} 条进口价（跳过 {m} 行无效数据）。",
+ "Rebate (%)": "返利 (%)",
+ "Rebate Vendor (%)": "厂商返利 (%)",
+ "Đại lý (Partner)": "经销商（Partner）",
+ "Vendor (Aurcore)": "厂商（Aurcore）",
+ "Vai trò không hợp lệ.": "角色无效。",
+ "Không thể tự hạ quyền của chính mình.": "不能降低自己的权限。",
+ "Không thể tự xoá chính mình.": "不能删除自己。",
+ "Không tìm thấy email này.": "未找到该邮箱。",
+ "Thiếu giá nhập khẩu cho model: ": "缺少以下型号的进口价：",
+ "Giá nhập không hợp lệ.": "进口价无效。",
+ "Chưa có dữ liệu giá nhập để lưu.": "没有可保存的进口价数据。"
 }
 };
 
@@ -596,6 +696,9 @@ function setLang(l){
     fillFilters();
     if (vendorRows.length) renderVendorList();
     if (cnRows.length) renderCnList();
+    fillRoleSelect();
+    if (usersRows.length) renderUsers();
+    if (pricesRows.length) renderPrices();
   }
   checkDup();
 }
@@ -852,14 +955,16 @@ function enterApp(landOn){
   document.getElementById('whoami').textContent = session.name ? `${session.name} (${session.email})` : session.email;
   const isV = session.role === 'Vendor', isA = session.role === 'Admin';
   const show = (id, on)=>{ document.getElementById(id).style.display = on ? '' : 'none'; };
-  show('tabForm', !isV); show('tabMine', !isV); show('tabAdmin', isA); show('tabVendor', isV); show('tabCn', isV || isA);
+  show('tabForm', !isV); show('tabMine', !isV); show('tabAdmin', isA); show('tabSettings', isA); show('tabVendor', isV); show('tabCn', isV || isA);
   if (!document.getElementById('lineItems').children.length) addLine();
   fillFilters();
-  showView(isV ? 'vendor' : (landOn === 'vendor' || landOn === 'cn' ? 'form' : (landOn || 'form')));
+  let land = isV ? 'vendor' : (landOn === 'vendor' || landOn === 'cn' || landOn === 'settings' ? 'form' : (landOn || 'form'));
+  if (isA && location.hash === '#admin') land = 'admin'; // link trong email thông báo: ...#admin mở thẳng trang quản trị
+  showView(land);
 }
 
 function showView(v){
-  ['form','mine','admin','vendor','cn'].forEach(x=>{
+  ['form','mine','admin','vendor','cn','settings'].forEach(x=>{
     document.getElementById('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active', v===x);
     document.getElementById('view'+x[0].toUpperCase()+x.slice(1)).style.display = v===x ? '' : 'none';
   });
@@ -868,6 +973,7 @@ function showView(v){
   if (v==='mine') loadMine();
   if (v==='vendor') loadVendor();
   if (v==='cn') loadCn();
+  if (v==='settings') loadSettings();
 }
 
 // ====== Form đăng ký ======
@@ -977,12 +1083,15 @@ function renderAdminList(rows){
       return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
-    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Rebate Vendor / đơn vị')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th></tr></thead>';
-    const vAmts = parseJSONSafe(s.VendorRebateJSON, []);
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Giá nhập')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Rebate Vendor (%)')) + '</th><th>' + esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th></tr></thead>';
+    const rc = (s.RebateCalc && s.RebateCalc.Lines) || [];
     const tbody=document.createElement('tbody');
     lines.forEach((ln,idx)=>{
       const tr=document.createElement('tr');
-      const tdV=document.createElement('td'); tdV.textContent = (vAmts[idx] !== undefined && vAmts[idx] !== '') ? fmtVendor(vAmts[idx]) : '-';
+      const r0 = rc[idx] || {};
+      const tdIp=document.createElement('td'); tdIp.textContent = (r0.ip !== undefined && r0.ip !== '') ? fmtVendor(r0.ip) : '-';
+      const tdVp=document.createElement('td'); tdVp.textContent = (r0.pct !== undefined && r0.pct !== '') ? r0.pct + '%' : '-';
+      const tdVa=document.createElement('td'); tdVa.textContent = (r0.amount !== undefined && r0.amount !== '') ? fmtVendor(r0.amount) : '-';
       const tdM=document.createElement('td'); tdM.textContent=ln.model;
       const tdQ=document.createElement('td'); tdQ.textContent=ln.qty;
       const tdP=document.createElement('td'); const pIn=document.createElement('input'); pIn.type='number'; pIn.value=ln.price||''; tdP.appendChild(pIn);
@@ -993,13 +1102,13 @@ function renderAdminList(rows){
       pIn.oninput=refreshFinal; rIn.oninput=refreshFinal;
       pIn.onblur=saveLines; rIn.onblur=saveLines;
       refreshFinal();
-      tr.append(tdM,tdQ,tdP,tdR,tdF,tdV); tbody.appendChild(tr);
+      tr.append(tdM,tdQ,tdP,tdR,tdF,tdIp,tdVp,tdVa); tbody.appendChild(tr);
     });
     tbl.appendChild(tbody);
-    card.appendChild(tbl);
-    const vTot = lines.reduce((sum,ln,i)=>{ const a=parseFloat(vAmts[i]); return isNaN(a) ? sum : sum + a*(parseFloat(ln.qty)||0); }, 0);
+    const wrapT = document.createElement('div'); wrapT.className='scrollx'; wrapT.appendChild(tbl);
+    card.appendChild(wrapT);
     const info = [];
-    if (vAmts.some(x=>x!=='' && x!==undefined)) info.push(t('Tổng rebate Vendor') + ': ' + fmtVendor(vTot));
+    if (s.RebateCalc && rc.some(x=>x.pct !== '' && x.pct !== undefined)) info.push(t('Tổng rebate Vendor') + ': ' + fmtVendor(s.RebateCalc.RebateTotal) + (s.RebateCalc.Frozen ? ' (' + t('Đã chốt CN') + ')' : ''));
     if (s.VendorNote) info.push(t('Ghi chú Vendor') + ': ' + s.VendorNote);
     if (s.NgayWon) info.push(t('Ngày Won') + ': ' + String(s.NgayWon).slice(0,10));
     if (s.SoCN) info.push(t('Số CN') + ': ' + s.SoCN);
@@ -1035,8 +1144,9 @@ function exportExcel(){
   allSubs.forEach(s=>{
     const lines = parseLines(s);
     const date = s.Timestamp ? new Date(s.Timestamp).toISOString().slice(0,10) : '';
-    const vAmts = parseJSONSafe(s.VendorRebateJSON, []);
+    const rc = (s.RebateCalc && s.RebateCalc.Lines) || [];
     (lines.length?lines:[{model:'',qty:'',price:'',rebatePct:''}]).forEach((ln,li)=>{
+      const rl = rc[li] || {};
       const finalUnit = priceAfterRebate(ln.price, ln.rebatePct);
       const qty = parseFloat(ln.qty)||0;
       rows.push({
@@ -1046,8 +1156,9 @@ function exportExcel(){
         ViTriDiaChi:s.ViTriDiaChi, Model:ln.model, SoLuong:ln.qty, DonGia_VND_DaGomVAT:ln.price, PhanTramRebate:ln.rebatePct,
         GiaSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit):'', ThanhTienSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit*qty):'',
         TrangThai:s.TrangThai, GhiChuNoiBo:s.GhiChuNoiBo,
-        ['RebateVendor_'+CONFIG.VENDOR_CCY+'_moiDonVi']: (vAmts[li] !== undefined ? vAmts[li] : ''),
-        ['RebateVendor_'+CONFIG.VENDOR_CCY+'_thanhTien']: (vAmts[li] !== undefined && vAmts[li] !== '' ? (parseFloat(vAmts[li])||0)*(parseFloat(ln.qty)||0) : ''),
+        ['GiaNhap_'+CONFIG.VENDOR_CCY]: (rl.ip !== undefined ? rl.ip : ''),
+        RebateVendor_Pct: (rl.pct !== undefined ? rl.pct : ''),
+        ['RebateVendor_'+CONFIG.VENDOR_CCY+'_thanhTien']: (rl.amount !== undefined ? rl.amount : ''),
         NgayWon: s.NgayWon ? String(s.NgayWon).slice(0,10) : '', SoCN: s.SoCN || '', GhiChuVendor: s.VendorNote || ''
       });
     });
@@ -1147,6 +1258,7 @@ function renderVendorList(){
   const list = document.getElementById('vendorList'); list.innerHTML = '';
   const rows = vendorRows.filter(r=> vFilterVal === 'all' || r.TrangThai === vFilterVal).slice().reverse();
   if (!rows.length){ list.innerHTML = '<div class="hint">' + esc(t('Chưa có dự án nào.')) + '</div>'; return; }
+  const ccy = esc(CONFIG.VENDOR_CCY);
   rows.forEach(s=>{
     const locked = !!s.SoCN;
     const card = document.createElement('div'); card.className = 'subcard';
@@ -1162,16 +1274,19 @@ function renderVendorList(){
       '<div><span class="badge st-' + esc(s.TrangThai) + '">' + esc(statusLabel(s.TrangThai)) + '</span></div></div>';
 
     const tbl = document.createElement('table'); tbl.className = 'lines-table';
-    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Rebate / đơn vị')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Thành tiền rebate')) + '</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Giá nhập')) + ' (' + ccy + ')</th><th>' + esc(t('Rebate (%)')) + '</th><th>' +
+      esc(t('Rebate / đơn vị')) + ' (' + ccy + ')</th><th>' + esc(t('Thành tiền rebate')) + '</th></tr></thead>';
     const tb = document.createElement('tbody');
-    const inputs = [];
+    const inputs = [], unitCells = [], amtCells = [];
     const totEl = document.createElement('div'); totEl.className = 'vtotal';
     const recalc = ()=>{
       let tot = 0;
       s.Lines.forEach((ln,i)=>{
-        const a = parseFloat(inputs[i].value), q = parseFloat(ln.qty) || 0;
-        const cell = inputs[i]._cell; cell.textContent = isNaN(a) ? '-' : fmtVendor(a*q);
-        if (!isNaN(a)) tot += a*q;
+        const ip = parseFloat(ln.ip), p = parseFloat(inputs[i].value), q = parseFloat(ln.qty) || 0;
+        if (!isNaN(ip) && !isNaN(p)){
+          const unit = ip * p / 100;
+          unitCells[i].textContent = fmtVendor(unit); amtCells[i].textContent = fmtVendor(unit * q); tot += unit * q;
+        }else{ unitCells[i].textContent = '-'; amtCells[i].textContent = '-'; }
       });
       totEl.textContent = t('Tổng rebate cho dự án') + ': ' + fmtVendor(tot);
     };
@@ -1179,12 +1294,17 @@ function renderVendorList(){
       const tr = document.createElement('tr');
       const tdM = document.createElement('td'); tdM.textContent = ln.model;
       const tdQ = document.createElement('td'); tdQ.textContent = ln.qty;
-      const tdI = document.createElement('td'); const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = 'any'; inp.value = ln.rebate; inp.disabled = locked; tdI.appendChild(inp);
-      const tdT = document.createElement('td'); inp._cell = tdT;
-      inp.oninput = recalc; inputs.push(inp);
-      tr.append(tdM, tdQ, tdI, tdT); tb.appendChild(tr);
+      const tdIp = document.createElement('td');
+      if (ln.ip !== '' && ln.ip !== undefined) tdIp.textContent = fmtVendor(ln.ip);
+      else{ tdIp.className = 'hint'; tdIp.textContent = t('Chưa có giá nhập'); }
+      const tdP = document.createElement('td'); const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = '0'; inp.max = '100'; inp.step = 'any'; inp.value = (ln.pct === undefined ? '' : ln.pct); inp.disabled = locked; tdP.appendChild(inp);
+      const tdU = document.createElement('td'), tdA = document.createElement('td');
+      inp.oninput = recalc; inputs.push(inp); unitCells.push(tdU); amtCells.push(tdA);
+      tr.append(tdM, tdQ, tdIp, tdP, tdU, tdA); tb.appendChild(tr);
     });
-    tbl.appendChild(tb); card.appendChild(tbl); card.appendChild(totEl); recalc();
+    const wrap = document.createElement('div'); wrap.className = 'scrollx'; tbl.appendChild(tb); wrap.appendChild(tbl);
+    card.appendChild(wrap); card.appendChild(totEl); recalc();
 
     const note = document.createElement('textarea'); note.value = s.VendorNote || ''; note.placeholder = t('Ghi chú tiến độ / điều kiện rebate'); note.disabled = locked; note.style.marginTop = '8px';
     card.appendChild(note);
@@ -1195,12 +1315,12 @@ function renderVendorList(){
     }else{
       const btn = document.createElement('button'); btn.className = 'btn-primary btn-sm'; btn.style.marginTop = '8px'; btn.textContent = t('💾 Lưu rebate');
       btn.onclick = async ()=>{
-        for (const inp of inputs){ if (inp.value !== '' && !(parseFloat(inp.value) >= 0)){ msg.textContent = t('Giá trị rebate không hợp lệ.'); return; } }
+        for (const inp of inputs){ const v = parseFloat(inp.value); if (inp.value !== '' && !(v >= 0 && v <= 100)){ msg.textContent = t('Rebate % phải là số từ 0 đến 100.'); return; } }
         btn.disabled = true; msg.textContent = t('Đang gửi…');
         try{
-          const r = await api({action:'saveVendorRebate', email:session.email, token:session.token, id:s.ID, amounts:inputs.map(i=>i.value), note:note.value});
+          const r = await api({action:'saveVendorRebate', email:session.email, token:session.token, id:s.ID, pcts:inputs.map(i=>i.value), note:note.value});
           msg.textContent = r.ok ? t('Đã lưu.') : (te(r.error) || t('Gửi thất bại.'));
-          if (r.ok){ s.Lines.forEach((ln,i)=>{ ln.rebate = inputs[i].value; }); s.VendorNote = note.value; }
+          if (r.ok){ s.Lines.forEach((ln,i)=>{ ln.pct = inputs[i].value === '' ? '' : parseFloat(inputs[i].value); }); s.VendorNote = note.value; }
         }catch(e){ msg.textContent = t('Lỗi kết nối.'); }
         btn.disabled = false;
       };
@@ -1269,21 +1389,190 @@ async function issueCn(){
 
 function exportCnExcel(){
   const rows = [];
+  const ccy = CONFIG.VENDOR_CCY;
   cnVisible().forEach(r=>{
-    (r.Lines.length ? r.Lines : [{model:'', qty:'', rebate:''}]).forEach(ln=>{
-      const a = parseFloat(ln.rebate), q = parseFloat(ln.qty) || 0;
+    (r.Lines.length ? r.Lines : [{model:'', qty:'', ip:'', pct:'', amount:''}]).forEach(ln=>{
       rows.push({
         NgayWon:r.NgayWon, DuAn:r.TenDuAn, DoiTac:r.CongTyDoiTac, KhachHang:r.KhachHangCuoi, MaSoThue:r.MaSoThue,
         Model:ln.model, SoLuong:ln.qty,
-        ['Rebate_'+CONFIG.VENDOR_CCY+'_moiDonVi']: isNaN(a) ? '' : a,
-        ['Rebate_'+CONFIG.VENDOR_CCY+'_thanhTien']: isNaN(a) ? '' : a*q,
-        ['TongRebateDuAn_'+CONFIG.VENDOR_CCY]: r.RebateTotal, SoCN:r.SoCN, NgayCN:r.NgayCN
+        ['GiaNhap_'+ccy+'_moiDonVi']: ln.ip, RebateVendor_Pct: ln.pct,
+        ['Rebate_'+ccy+'_thanhTien']: ln.amount,
+        ['TongRebateDuAn_'+ccy]: r.RebateTotal, SoCN:r.SoCN, NgayCN:r.NgayCN
       });
     });
   });
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'CN');
   XLSX.writeFile(wb, 'Aurcore_CN_Vendor_Rebate.xlsx');
+}
+
+// ====== THIẾT LẬP (Admin): phân quyền email + bảng giá nhập khẩu ======
+let usersRows = [], usersSelf = '', pricesRows = [], pendingPrices = [], pendingSkipped = 0;
+const ROLE_LABEL = {Admin:'Admin', Partner:'Đại lý (Partner)', Vendor:'Vendor (Aurcore)'};
+function roleLabel(r){ return t(ROLE_LABEL[r] || r); }
+
+function fillRoleSelect(){
+  const sel = document.getElementById('uRole'); const cur = sel.value || 'Partner';
+  sel.innerHTML = '';
+  ['Admin','Partner','Vendor'].forEach(r=>{
+    const o = document.createElement('option'); o.value = r; o.textContent = roleLabel(r); if (r === cur) o.selected = true; sel.appendChild(o);
+  });
+}
+
+async function loadSettings(){
+  fillRoleSelect();
+  try{
+    const r = await api({action:'listUsers', email:session.email, token:session.token});
+    if (r.ok){ usersRows = r.rows; usersSelf = r.self; renderUsers(); }
+    else vendorMsg('usersMsg', te(r.error) || t('Lỗi kết nối.'));
+  }catch(e){ vendorMsg('usersMsg', t('Lỗi kết nối tới hệ thống.')); }
+  try{
+    const r2 = await api({action:'listImportPrices', email:session.email, token:session.token});
+    if (r2.ok){ pricesRows = r2.rows; renderPrices(); }
+    else vendorMsg('pricesMsg', te(r2.error) || t('Lỗi kết nối.'));
+  }catch(e){ vendorMsg('pricesMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+function renderUsers(){
+  const box = document.getElementById('usersList'); box.innerHTML = '';
+  const order = ['Admin','Vendor','Partner'];
+  const rows = usersRows.slice().sort((a,b)=> a.Role === b.Role ? a.Email.localeCompare(b.Email) : order.indexOf(a.Role) - order.indexOf(b.Role));
+  const tbl = document.createElement('table'); tbl.className = 'lines-table'; tbl.style.marginTop = '10px';
+  tbl.innerHTML = '<thead><tr><th>Email</th><th>' + esc(t('Tên hiển thị')) + '</th><th>' + esc(t('Vai trò')) + '</th><th></th></tr></thead>';
+  const tb = document.createElement('tbody');
+  rows.forEach(u=>{
+    const self = u.Email === usersSelf;
+    const tr = document.createElement('tr');
+    const tdE = document.createElement('td'); tdE.textContent = u.Email + (self ? ' (' + t('bạn') + ')' : '');
+    const tdN = document.createElement('td'); const nameIn = document.createElement('input'); nameIn.value = u.Name || ''; tdN.appendChild(nameIn);
+    const tdR = document.createElement('td'); const sel = document.createElement('select');
+    ['Admin','Partner','Vendor'].forEach(r=>{ const o = document.createElement('option'); o.value = r; o.textContent = roleLabel(r); if (r === u.Role) o.selected = true; sel.appendChild(o); });
+    sel.disabled = self; tdR.appendChild(sel);
+    const tdA = document.createElement('td'); tdA.style.whiteSpace = 'nowrap';
+    const save = document.createElement('button'); save.className = 'btn-primary btn-sm'; save.textContent = t('Lưu');
+    save.onclick = ()=>saveUserRow(u.Email, nameIn.value, sel.value);
+    tdA.appendChild(save);
+    if (!self){
+      const del = document.createElement('button'); del.className = 'btn-ghost btn-sm'; del.style.marginLeft = '4px'; del.textContent = t('Xoá');
+      del.onclick = ()=>deleteUserRow(u.Email);
+      tdA.appendChild(del);
+    }
+    tr.append(tdE, tdN, tdR, tdA); tb.appendChild(tr);
+  });
+  tbl.appendChild(tb); box.appendChild(tbl);
+}
+
+async function saveUserRow(target, name, role){
+  try{
+    const r = await api({action:'saveUser', email:session.email, token:session.token, target, name, role});
+    if (r.ok){ await loadSettings(); vendorMsg('usersMsg', t('Đã lưu.'), 'ok'); }
+    else vendorMsg('usersMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('usersMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+async function deleteUserRow(target){
+  if (!confirm(t('Xoá {email} khỏi danh sách?', {email: target}))) return;
+  try{
+    const r = await api({action:'deleteUser', email:session.email, token:session.token, target});
+    if (r.ok){ await loadSettings(); vendorMsg('usersMsg', t('Đã xoá.'), 'ok'); }
+    else vendorMsg('usersMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('usersMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+async function addUser(){
+  const email = document.getElementById('uEmail').value.trim();
+  if (!email){ vendorMsg('usersMsg', t('Vui lòng nhập email.')); return; }
+  await saveUserRow(email, document.getElementById('uName').value, document.getElementById('uRole').value);
+  document.getElementById('uEmail').value = ''; document.getElementById('uName').value = '';
+}
+
+function flatModels(){ return [].concat.apply([], Object.keys(PRODUCTS).map(k=>PRODUCTS[k])); }
+
+function renderPrices(){
+  const box = document.getElementById('pricesList'); box.innerHTML = '';
+  const have = {}; pricesRows.forEach(p=>{ have[String(p.Model).trim().toUpperCase()] = true; });
+  const missing = flatModels().filter(m=>!have[m.toUpperCase()]);
+  document.getElementById('pricesMissing').innerHTML = '<div class="hint" style="margin-top:8px;">' + esc(missing.length
+    ? t('Chưa có giá nhập cho {n} model: {list}', {n: missing.length, list: missing.join(', ')})
+    : t('Đã có giá nhập cho tất cả model trong danh sách.')) + '</div>';
+  if (!pricesRows.length){ box.innerHTML = '<div class="hint">' + esc(t('Chưa có bảng giá nhập.')) + '</div>'; return; }
+  const tbl = document.createElement('table'); tbl.className = 'lines-table';
+  tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('Giá nhập')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Cập nhật')) + '</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  pricesRows.slice().sort((a,b)=>String(a.Model).localeCompare(String(b.Model))).forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + esc(p.Model) + '</td><td>' + esc(fmtVendor(p.ImportPrice)) + '</td><td>' + esc(p.UpdatedAt) + '</td>';
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb); box.appendChild(tbl);
+}
+
+// Đọc bảng giá: nhận diện cột theo tiêu đề (model/sku/part…, price/giá/cost…); không có tiêu đề thì lấy cột 1 = model, cột 2 = giá.
+function parsePriceRows(aoa){
+  // Hiểu cả 1,250.50 (kiểu Mỹ) lẫn 1.250,50 / 12,5 (kiểu Việt-Âu) khi ô giá là chữ.
+  const num = v=>{
+    if (typeof v === 'number') return v;
+    let s = String(v === undefined || v === null ? '' : v).trim();
+    if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^-?\d+,\d{1,2}$/.test(s)) s = s.replace(',', '.');
+    return parseFloat(s.replace(/[^0-9.\-]/g, ''));
+  };
+  if (!aoa || !aoa.length) return {items:[], skipped:0};
+  const head = aoa[0].map(x=>String(x === undefined || x === null ? '' : x).trim().toLowerCase());
+  let mCol = head.findIndex(x=>/^(model|sku|part|pn|mã|ma |sản phẩm|san pham)/.test(x));
+  let pCol = head.findIndex(x=>/(price|giá|gia |cost|usd|import)/.test(x));
+  let start = 1;
+  if (mCol < 0 || pCol < 0 || mCol === pCol){ mCol = 0; pCol = 1; start = isNaN(num(aoa[0][1])) ? 1 : 0; }
+  const map = {}, order = []; let skipped = 0;
+  aoa.slice(start).forEach(r=>{
+    const model = String(r[mCol] === undefined || r[mCol] === null ? '' : r[mCol]).trim();
+    const raw = r[pCol];
+    if (!model && (raw === '' || raw === undefined || raw === null)) return;
+    const price = num(raw);
+    if (!model || !isFinite(price) || price < 0){ skipped++; return; }
+    const k = model.toUpperCase();
+    if (!(k in map)) order.push(k);
+    map[k] = {model: model, price: price};
+  });
+  return {items: order.map(k=>map[k]), skipped: skipped};
+}
+
+function readPriceFile(ev){
+  const f = ev.target.files && ev.target.files[0];
+  pendingPrices = []; pendingSkipped = 0;
+  document.getElementById('priceUploadBtn').style.display = 'none';
+  document.getElementById('pricePreview').innerHTML = ''; vendorMsg('pricesMsg', '');
+  if (!f) return;
+  if (typeof XLSX === 'undefined'){ vendorMsg('pricesMsg', t('Không tải được thư viện đọc Excel. Kiểm tra kết nối mạng rồi tải lại trang.')); return; }
+  const rd = new FileReader();
+  rd.onload = e=>{
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+      const res = parsePriceRows(aoa);
+      pendingPrices = res.items; pendingSkipped = res.skipped;
+      if (!res.items.length){ vendorMsg('pricesMsg', t('Không đọc được dòng giá hợp lệ nào. File cần 2 cột: Model và Giá nhập.')); return; }
+      const sample = res.items.slice(0, 3).map(x=>x.model + ' = ' + x.price).join('; ');
+      document.getElementById('pricePreview').innerHTML = '<div class="msg ok">' + esc(t('Đọc được {n} model hợp lệ, bỏ qua {m} dòng không hợp lệ. Ví dụ: {sample}. Kiểm tra rồi bấm "Tải bảng giá lên hệ thống".', {n: res.items.length, m: res.skipped, sample: sample})) + '</div>';
+      document.getElementById('priceUploadBtn').style.display = '';
+    }catch(err){ vendorMsg('pricesMsg', t('Không đọc được file. Hãy dùng file Excel (.xlsx) hoặc CSV có 2 cột: Model và Giá nhập.')); }
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+async function uploadPrices(){
+  if (!pendingPrices.length) return;
+  const btn = document.getElementById('priceUploadBtn'); btn.disabled = true;
+  try{
+    const r = await api({action:'saveImportPrices', email:session.email, token:session.token, items:pendingPrices});
+    if (r.ok){
+      pendingPrices = []; document.getElementById('priceFile').value = '';
+      document.getElementById('pricePreview').innerHTML = ''; btn.style.display = 'none';
+      await loadSettings();
+      vendorMsg('pricesMsg', t('Đã lưu {n} giá nhập (bỏ qua {m} dòng không hợp lệ).', {n: r.saved, m: r.skipped + pendingSkipped}), 'ok');
+    }else vendorMsg('pricesMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('pricesMsg', t('Lỗi kết nối tới hệ thống.')); }
+  btn.disabled = false;
 }
 
 (function init(){

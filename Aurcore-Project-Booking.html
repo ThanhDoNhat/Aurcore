@@ -46,7 +46,8 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 @media (max-width:560px){.line-item{grid-template-columns:1fr;}}
 .hint{font-size:12px;color:var(--muted);margin-top:4px;}
 #loginScreen{max-width:420px;margin:60px auto;}
-#mapPicker{height:260px;border-radius:8px;border:1px solid var(--border);margin-top:6px;}
+#mapPicker{height:260px;border-radius:8px;border:1px solid var(--border);margin-top:6px;position:relative;z-index:0;isolation:isolate;}
+.leaflet-container{z-index:0;}
 .addr-row{display:flex;gap:8px;margin-top:6px;}
 .addr-row input{flex:1;}
 .badge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;display:inline-block;}
@@ -61,7 +62,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 .lines-table input{padding:5px 6px;font-size:12.5px;}
 .total-line{font-weight:700;font-size:13px;margin-top:6px;}
 .brandbar{flex-wrap:wrap;row-gap:8px;}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:12px;}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100000;display:flex;align-items:center;justify-content:center;padding:12px;}
 .modal-box{background:var(--card);border-radius:12px;padding:18px;max-width:680px;width:100%;max-height:90vh;overflow:auto;}
 .modal-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
 .policy-body{max-height:48vh;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;background:var(--bg);}
@@ -188,7 +189,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 <div id="viewSettings" style="display:none;">
   <div class="card">
     <h3 style="margin:0 0 6px;font-size:15px;">Phân quyền email</h3>
-    <div class="hint" style="margin-bottom:8px;">Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin). Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.</div>
+    <div class="hint" style="margin-bottom:8px;">Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin), nhận email thông báo khi có dự án mới; thêm trước email Vendor ở đây để họ nhận thông báo ngay cả khi chưa đăng nhập lần nào. Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.</div>
     <div class="row">
       <div><label>Email</label><input id="uEmail" type="email"></div>
       <div><label>Tên hiển thị</label><input id="uName"></div>
@@ -304,7 +305,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 <script>
 // ====== CẤU HÌNH — DÁN WEB APP URL CỦA APPS SCRIPT VÀO ĐÂY (giữ nguyên trong dấu nháy đơn) ======
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwqTTqieysaWTptVtvYctpDLo9QE4mLIqzOiqooNE3nImd_91Fk2f-IkuEa0Nmgq8Rn_Q/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyJdA6DI7GhkCBnNB3d_YHNuNaazVO91uTX_LX1FbKzy9yVLFU1WQvaQ5JezD_6POVDZA/exec',
   // Để trống = dùng OpenStreetMap (miễn phí). Dán Google Maps API Key vào đây = dùng Google Maps tiếng Việt.
   GOOGLE_MAPS_KEY: '',
   // Đơn vị tiền của rebate Vendor (chỉ là nhãn hiển thị, ví dụ 'USD' hoặc 'VNĐ').
@@ -484,7 +485,7 @@ const DICT = {
  "Hệ thống đang bận, vui lòng thử lại.": "The system is busy, please try again.",
  "Thiết lập": "Settings",
  "Phân quyền email": "Email roles",
- "Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin). Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.": "Admin: can view and review all projects and receives an email whenever a new project is registered. Partner: a reseller who registers projects. Vendor: Aurcore (emails ending in @aurcore.net are automatically Vendors unless set to Admin). Removing an email returns that person to the default role the next time they log in.",
+ "Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin), nhận email thông báo khi có dự án mới; thêm trước email Vendor ở đây để họ nhận thông báo ngay cả khi chưa đăng nhập lần nào. Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.": "Admin: can view and review all projects and receives an email whenever a new project is registered. Partner: a reseller who registers projects. Vendor: Aurcore (emails ending in @aurcore.net are automatically Vendors unless set to Admin) and receives an email whenever a new project is registered; add Vendor emails here in advance so they get notified even before their first login. Removing an email returns that person to the default role the next time they log in.",
  "Tên hiển thị": "Display name",
  "Vai trò": "Role",
  "Thêm / cập nhật": "Add / update",
@@ -602,7 +603,8 @@ const DICT = {
  "Mã số thuế phải gồm 10 hoặc 13 chữ số.": "The tax code must have 10 or 13 digits.",
  "Bạn tra cứu quá nhiều lần, vui lòng thử lại sau hoặc nhập tay.": "You have looked up too many times, please try again later or enter the details manually.",
  "Dịch vụ tra cứu đang bận, vui lòng thử lại sau hoặc nhập tay.": "The lookup service is busy, please try again later or enter the details manually.",
- "Vui lòng chọn phương án thắng cho dự án trước khi chốt CN.": "Please select the winning option for the project before issuing the CN."
+ "Vui lòng chọn phương án thắng cho dự án trước khi chốt CN.": "Please select the winning option for the project before issuing the CN.",
+ "Báo Vendor có dự án mới": "Vendors notified of a new project"
 },
  zh: {
  "Đăng ký dự án & theo dõi phê duyệt — xin chào": "项目报备与审批跟踪 — 您好",
@@ -750,7 +752,7 @@ const DICT = {
  "Hệ thống đang bận, vui lòng thử lại.": "系统繁忙，请稍后重试。",
  "Thiết lập": "设置",
  "Phân quyền email": "邮箱权限管理",
- "Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin). Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.": "Admin：可查看并审核所有项目，有新项目报备时会收到邮件通知。Partner：报备项目的经销商。Vendor：Aurcore（以 @aurcore.net 结尾的邮箱自动为 Vendor，除非被设为 Admin）。删除某个邮箱后，该用户下次登录时将恢复为默认角色。",
+ "Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin), nhận email thông báo khi có dự án mới; thêm trước email Vendor ở đây để họ nhận thông báo ngay cả khi chưa đăng nhập lần nào. Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.": "Admin：可查看并审核所有项目，有新项目报备时会收到邮件通知。Partner：报备项目的经销商。Vendor：Aurcore（以 @aurcore.net 结尾的邮箱自动为 Vendor，除非被设为 Admin），有新项目报备时同样会收到邮件通知；请提前在此添加厂商邮箱，这样即使尚未登录过也能收到通知。删除某个邮箱后，该用户下次登录时将恢复为默认角色。",
  "Tên hiển thị": "显示名称",
  "Vai trò": "角色",
  "Thêm / cập nhật": "添加 / 更新",
@@ -868,7 +870,8 @@ const DICT = {
  "Mã số thuế phải gồm 10 hoặc 13 chữ số.": "税号必须为 10 位或 13 位数字。",
  "Bạn tra cứu quá nhiều lần, vui lòng thử lại sau hoặc nhập tay.": "查询次数过多，请稍后重试或手动填写。",
  "Dịch vụ tra cứu đang bận, vui lòng thử lại sau hoặc nhập tay.": "查询服务繁忙，请稍后重试或手动填写。",
- "Vui lòng chọn phương án thắng cho dự án trước khi chốt CN.": "开具 CN 前请先为项目选择赢单方案。"
+ "Vui lòng chọn phương án thắng cho dự án trước khi chốt CN.": "开具 CN 前请先为项目选择赢单方案。",
+ "Báo Vendor có dự án mới": "已通知厂商有新项目"
 }
 };
 
@@ -1544,7 +1547,7 @@ const POLICY = {
     ['Mục đích', 'Hệ thống Project Booking System (PBS) do EAVN vận hành để tiếp nhận đăng ký dự án của đối tác phân phối sản phẩm Aurcore, kiểm tra trùng lặp dự án và theo dõi quá trình xét duyệt, báo giá, hỗ trợ.'],
     ['Thông tin được thu thập', 'Thông tin đối tác (tên công ty, người đăng ký, email đăng nhập); thông tin khách hàng cuối (tên, mã số thuế, địa chỉ, ngành); thông tin dự án (mô tả, giá trị ước tính, ngày dự kiến chốt, đối thủ, sản phẩm và số lượng, vị trí triển khai nếu có); nhật ký truy cập và hoạt động trên hệ thống.'],
     ['Mục đích sử dụng', 'Xử lý đăng ký, đối chiếu mã số thuế và vị trí để tránh trùng dự án, báo giá, tính hỗ trợ rebate, liên hệ và gửi nhắc nhở liên quan đến dự án.'],
-    ['Chia sẻ thông tin', 'Thông tin dự án được chia sẻ cho EAVN và Aurcore Networks (nhà sản xuất) để xét hỗ trợ cho dự án. Aurcore chỉ thấy tên công ty và người đăng ký, không thấy email, số điện thoại của bạn và không thấy giá bán EAVN báo cho khách hàng. EAVN không bán dữ liệu cho bên thứ ba.'],
+    ['Chia sẻ thông tin', 'Thông tin dự án được chia sẻ cho EAVN và Aurcore Networks (nhà sản xuất) để xét hỗ trợ cho dự án. Aurcore chỉ thấy tên công ty và người đăng ký, không thấy email, số điện thoại của bạn và không thấy giá bán EAVN báo cho khách hàng. Dữ liệu được lưu và xử lý trên dịch vụ của Google (Google Sheets, Apps Script) và dịch vụ gửi email. EAVN không bán dữ liệu cho bên thứ ba.'],
     ['Trách nhiệm của đối tác', 'Bạn cam kết có quyền hợp pháp cung cấp thông tin về khách hàng cuối, thông tin cung cấp là chính xác, không đưa vào dữ liệu cá nhân không cần thiết hoặc nhạy cảm, giữ bí mật tài khoản và mã OTP, và không tiết lộ báo giá, mức rebate cho bên không liên quan.'],
     ['An toàn thông tin', 'Hệ thống dùng xác thực email bằng mã OTP, phân quyền theo vai trò (Admin, Vendor, đại lý), truyền dữ liệu qua kết nối mã hoá HTTPS và ghi nhật ký hoạt động để theo dõi thay đổi. EAVN áp dụng các biện pháp bảo vệ hợp lý; tuy nhiên không hệ thống nào an toàn tuyệt đối. Khi xảy ra sự cố ảnh hưởng đến dữ liệu, EAVN sẽ xử lý và thông báo theo quy định pháp luật.'],
     ['Thời gian lưu trữ', 'Dữ liệu được lưu trong thời gian cần thiết cho các mục đích nêu trên và theo yêu cầu của pháp luật, hợp đồng; sau đó sẽ được xoá hoặc ẩn danh.'],
@@ -1555,7 +1558,7 @@ const POLICY = {
     ['Purpose', 'The Project Booking System (PBS) is operated by EAVN to receive project registrations from partners distributing Aurcore products, to detect duplicate projects, and to track review, quotation and support.'],
     ['Information collected', 'Partner information (company name, registrant, login email); end-customer information (name, tax code, address, industry); project information (description, estimated value, expected closing date, competitors, products and quantities, deployment location if provided); access and activity logs.'],
     ['How it is used', 'To process registrations, match tax codes and locations to avoid duplicate projects, prepare quotations, calculate rebate support, and contact you or send reminders about the project.'],
-    ['Sharing', 'Project information is shared with EAVN and Aurcore Networks (the manufacturer) to assess support for the project. Aurcore sees only your company name and registrant, not your email or phone number, and not the selling prices EAVN quotes to customers. EAVN does not sell data to third parties.'],
+    ['Sharing', 'Project information is shared with EAVN and Aurcore Networks (the manufacturer) to assess support for the project. Aurcore sees only your company name and registrant, not your email or phone number, and not the selling prices EAVN quotes to customers. Data is stored and processed on Google services (Google Sheets, Apps Script) and an email delivery service. EAVN does not sell data to third parties.'],
     ['Partner responsibilities', 'You confirm that you are legally entitled to provide the end-customer information, that it is accurate, that you will not enter unnecessary or sensitive personal data, that you will keep your account and OTP codes confidential, and that you will not disclose quotations or rebate levels to unrelated parties.'],
     ['Information security', 'The system uses email OTP authentication, role-based access (Admin, Vendor, partner), encrypted HTTPS connections and an activity log to track changes. EAVN applies reasonable safeguards; however, no system is absolutely secure. If an incident affects data, EAVN will handle it and notify as required by law.'],
     ['Retention', 'Data is kept for as long as needed for the purposes above and as required by law or contract, and is then deleted or anonymised.'],
@@ -1566,7 +1569,7 @@ const POLICY = {
     ['目的', 'Project Booking System（PBS）由 EAVN 运营，用于接收分销 Aurcore 产品的合作伙伴的项目报备，检查重复项目，并跟踪审核、报价与支持。'],
     ['收集的信息', '合作伙伴信息（公司名称、报备人、登录邮箱）；最终客户信息（名称、税号、地址、行业）；项目信息（描述、预计金额、预计成交日期、竞争对手、产品及数量、如有则含部署地点）；访问与操作日志。'],
     ['使用目的', '处理报备、比对税号和地点以避免重复项目、报价、计算返利支持、联系您以及发送与项目相关的提醒。'],
-    ['信息共享', '项目信息会与 EAVN 和 Aurcore Networks（制造商）共享，以评估对项目的支持。Aurcore 仅能看到您的公司名称和报备人，看不到您的邮箱、电话，也看不到 EAVN 向客户报出的销售价格。EAVN 不会向第三方出售数据。'],
+    ['信息共享', '项目信息会与 EAVN 和 Aurcore Networks（制造商）共享，以评估对项目的支持。Aurcore 仅能看到您的公司名称和报备人，看不到您的邮箱、电话，也看不到 EAVN 向客户报出的销售价格。数据存储和处理于 Google 服务（Google Sheets、Apps Script）及邮件发送服务。EAVN 不会向第三方出售数据。'],
     ['合作伙伴责任', '您确认有合法权利提供最终客户信息，所提供信息准确，不录入不必要或敏感的个人数据，妥善保管账户和 OTP 验证码，并且不向无关方披露报价和返利水平。'],
     ['信息安全', '系统采用邮箱 OTP 验证、基于角色的权限（Admin、厂商、经销商）、HTTPS 加密传输，并记录操作日志以跟踪变更。EAVN 采取合理的保护措施，但任何系统都不可能绝对安全。如发生影响数据的事件，EAVN 将按法律规定处理并通知。'],
     ['保存期限', '数据在上述目的所需期间以及法律或合同要求的期限内保存，之后将被删除或匿名化。'],
@@ -1818,7 +1821,7 @@ let logRows = [];
 const ACTION_LABEL = {
   'project.create':'Đăng ký dự án', 'project.update':'Đại lý sửa dự án', 'status.update':'Đổi trạng thái', 'price.update':'Nhập giá / rebate',
   'quote.send':'Gửi báo giá', 'vendor.rebate':'Vendor nhập rebate', 'cn.issue':'Chốt CN', 'user.add':'Thêm email', 'user.update':'Đổi vai trò',
-  'user.delete':'Xoá email', 'prices.upload':'Tải bảng giá nhập', 'login':'Đăng nhập', 'reminder.run':'Gửi nhắc nhở'
+  'user.delete':'Xoá email', 'vendor.notify':'Báo Vendor có dự án mới', 'prices.upload':'Tải bảng giá nhập', 'login':'Đăng nhập', 'reminder.run':'Gửi nhắc nhở'
 };
 function fillLogFilter(){
   const sel = document.getElementById('logRole'); const cur = sel.value || 'all';
@@ -1999,7 +2002,7 @@ function cnVisible(){
 function renderCnList(){
   const isA = session && session.role === 'Admin';
   document.getElementById('cnAdminBar').style.display = isA ? '' : 'none';
-  document.getElementById('cnExportBtn').style.display = isA ? '' : 'none';
+  document.getElementById('cnExportBtn').style.display = '';
   const box = document.getElementById('cnList'); box.innerHTML = '';
   const rows = cnVisible();
   setSearchCount('qCn', rows.length, cnRows.length);
@@ -2041,13 +2044,15 @@ async function issueCn(){
   }catch(e){ vendorMsg('cnMsg', t('Lỗi kết nối tới hệ thống.')); }
 }
 
+// Báo cáo CN (Admin và Vendor đều xuất được): Sheet 1 = chi tiết từng model, Sheet 2 = tổng hợp theo số CN.
+// Dữ liệu lấy từ cnSummary nên Vendor chỉ có thông tin Vendor được phép thấy (không có giá/báo giá VNĐ của EAVN).
 function exportCnExcel(){
+  const ccy = CONFIG.VENDOR_CCY, vis = cnVisible();
   const rows = [];
-  const ccy = CONFIG.VENDOR_CCY;
-  cnVisible().forEach(r=>{
+  vis.forEach(r=>{
     (r.Lines.length ? r.Lines : [{model:'', qty:'', ip:'', pct:'', amount:''}]).forEach(ln=>{
       rows.push({
-        NgayWon:r.NgayWon, DuAn:r.TenDuAn, DoiTac:r.CongTyDoiTac, KhachHang:r.KhachHangCuoi, MaSoThue:r.MaSoThue,
+        ID:r.ID, NgayWon:r.NgayWon, DuAn:r.TenDuAn, DoiTac:r.CongTyDoiTac, KhachHang:r.KhachHangCuoi, MaSoThue:r.MaSoThue,
         PhuongAn:(ln.opt||1), DuocTinh:(ln.counted===false?'Khong':'Co'), Model:ln.model, SoLuong:ln.qty,
         ['GiaNhap_'+ccy+'_moiDonVi']: ln.ip, RebateVendor_Pct: ln.pct,
         ['Rebate_'+ccy+'_thanhTien']: ln.amount,
@@ -2055,9 +2060,19 @@ function exportCnExcel(){
       });
     });
   });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'CN');
-  XLSX.writeFile(wb, 'Aurcore_CN_Vendor_Rebate.xlsx');
+  const groups = {}, order = [];
+  vis.forEach(r=>{
+    const k = r.SoCN || '';
+    if (!(k in groups)){ groups[k] = {SoCN: k || t('Chưa chốt CN'), NgayCN: r.NgayCN || '', SoDuAn: 0, ['TongRebate_'+ccy]: 0}; order.push(k); }
+    groups[k].SoDuAn++; groups[k]['TongRebate_'+ccy] += r.RebateTotal;
+  });
+  order.sort((a,b)=> a === b ? 0 : (a === '' ? 1 : (b === '' ? -1 : a.localeCompare(b))));
+  const sum = order.map(k=>groups[k]);
+  sum.push({SoCN:'TOTAL', NgayCN:'', SoDuAn:vis.length, ['TongRebate_'+ccy]: vis.reduce((s,r)=>s + r.RebateTotal, 0)});
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'CN_ChiTiet');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sum), 'CN_TongHop');
+  XLSX.writeFile(wb, 'Aurcore_CN_Report_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
 // ====== THIẾT LẬP (Admin): phân quyền email + bảng giá nhập khẩu ======

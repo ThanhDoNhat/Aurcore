@@ -74,6 +74,8 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 .opt-group{border:1px dashed var(--border);border-radius:10px;padding:10px;margin-bottom:10px;}
 .opt-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .ok-text{color:var(--ok);}
+.applybar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;}
+.applybar select{width:auto;min-width:170px;}
 .st-Won{background:rgba(26,138,76,.22);color:var(--ok);}
 .st-Lost{background:rgba(107,114,128,.18);color:var(--muted);}
 .vtotal{font-weight:700;font-size:13px;margin-top:6px;}
@@ -212,6 +214,20 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
     <div class="scrollx" style="max-height:300px;overflow:auto;margin-top:8px;"><div id="pricesList" data-noi18n></div></div>
   </div>
   <div class="card">
+    <h3 style="margin:0 0 6px;font-size:15px;">Bảng giá bán và danh mục model</h3>
+    <div class="hint">Tải file Excel hoặc CSV: cột đầu là Model (có thể thêm cột Nhóm/Group và Mô tả/Description), các cột còn lại là các cột giá VNĐ đã gồm VAT, ví dụ: Giá niêm yết, Giá đại lý, Giá dự án. Danh mục model sẽ hiện trong ô chọn sản phẩm của đại lý; bảng giá chỉ Admin thấy. Ở mỗi dự án, Admin chọn một cột giá rồi bấm "Áp giá" để điền đơn giá cho các dòng ngay.</div>
+    <input type="file" id="sellFile" accept=".xlsx,.xls,.csv" onchange="readSellFile(event)" style="margin-top:8px;">
+    <div id="sellPreview" data-noi18n></div>
+    <div id="sellOptions" style="display:none;margin-top:8px;">
+      <label class="chk"><input type="radio" name="sellMode" value="merge" checked> <span>Cập nhật và thêm vào bảng hiện có</span></label>
+      <label class="chk" style="margin-top:4px;"><input type="radio" name="sellMode" value="replace"> <span>Thay toàn bộ bảng hiện có</span></label>
+    </div>
+    <button class="btn-primary btn-sm" id="sellUploadBtn" style="display:none;margin-top:8px;" onclick="uploadSell()">Tải bảng giá bán lên hệ thống</button>
+    <div id="sellMsg" data-noi18n></div>
+    <div class="searchbar"><input id="qSell" type="search" placeholder="Tìm kiếm (gõ để lọc tự động)..." oninput="searchChanged('sell')"><label class="chk"><input type="checkbox" id="qSellExact" onchange="searchChanged('sell')"> <span>Chính xác</span></label><span class="hint" id="qSellCount" data-noi18n></span></div>
+    <div class="scrollx" style="max-height:320px;overflow:auto;"><div id="sellList" data-noi18n></div></div>
+  </div>
+  <div class="card">
     <h3 style="margin:0 0 6px;font-size:15px;">Nhắc nhở trước ngày chốt đơn</h3>
     <div class="hint">Hệ thống gửi email nhắc cho email đăng ký và tất cả Admin khi dự án còn tối đa 14 ngày tới ngày dự kiến chốt (mỗi dự án một lần). Chạy hàm setupDailyTrigger trong Apps Script một lần để hệ thống tự gửi mỗi ngày lúc 8h sáng. Bấm nút dưới đây để chạy kiểm tra ngay.</div>
     <button class="btn-primary" style="margin-top:8px;" onclick="runRemindersNow()">Chạy kiểm tra nhắc nhở ngay</button>
@@ -305,7 +321,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 <script>
 // ====== CẤU HÌNH — DÁN WEB APP URL CỦA APPS SCRIPT VÀO ĐÂY (giữ nguyên trong dấu nháy đơn) ======
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwFpZgVgkZPptAURhpSds8ANtTJKyTe3yiRdDokcu2SfMZEt5EMy7dUCqeeYOpLMtgPFA/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyJdA6DI7GhkCBnNB3d_YHNuNaazVO91uTX_LX1FbKzy9yVLFU1WQvaQ5JezD_6POVDZA/exec',
   // Để trống = dùng OpenStreetMap (miễn phí). Dán Google Maps API Key vào đây = dùng Google Maps tiếng Việt.
   GOOGLE_MAPS_KEY: '',
   // Đơn vị tiền của rebate Vendor (chỉ là nhãn hiển thị, ví dụ 'USD' hoặc 'VNĐ').
@@ -604,7 +620,31 @@ const DICT = {
  "Bạn tra cứu quá nhiều lần, vui lòng thử lại sau hoặc nhập tay.": "You have looked up too many times, please try again later or enter the details manually.",
  "Dịch vụ tra cứu đang bận, vui lòng thử lại sau hoặc nhập tay.": "The lookup service is busy, please try again later or enter the details manually.",
  "Vui lòng chọn phương án thắng cho dự án trước khi chốt CN.": "Please select the winning option for the project before issuing the CN.",
- "Báo Vendor có dự án mới": "Vendors notified of a new project"
+ "Báo Vendor có dự án mới": "Vendors notified of a new project",
+ "Bảng giá bán và danh mục model": "Sell price list and model catalog",
+ "Tải file Excel hoặc CSV: cột đầu là Model (có thể thêm cột Nhóm/Group và Mô tả/Description), các cột còn lại là các cột giá VNĐ đã gồm VAT, ví dụ: Giá niêm yết, Giá đại lý, Giá dự án. Danh mục model sẽ hiện trong ô chọn sản phẩm của đại lý; bảng giá chỉ Admin thấy. Ở mỗi dự án, Admin chọn một cột giá rồi bấm \"Áp giá\" để điền đơn giá cho các dòng ngay.": "Upload an Excel or CSV file: the first column is Model (you can add Group and Description columns), and the remaining columns are VND price columns, VAT included, for example: List price, Dealer price, Project price. The model catalog appears in the partners' product selector; the price list is visible to Admins only. On each project, the Admin picks a price column and clicks \"Apply price\" to fill in the unit prices at once.",
+ "Cập nhật và thêm vào bảng hiện có": "Update and add to the existing list",
+ "Thay toàn bộ bảng hiện có": "Replace the whole existing list",
+ "Tải bảng giá bán lên hệ thống": "Upload sell price list to the system",
+ "Cột giá": "Price column",
+ "Không đọc được model nào. Cột đầu của file cần là Model.": "No model could be read. The first column of the file must be Model.",
+ "Đọc được {n} model và {k} cột giá: {cols}. Bỏ qua {m} dòng không có model. Kiểm tra rồi bấm \"Tải bảng giá bán lên hệ thống\".": "Read {n} model(s) and {k} price column(s): {cols}. Skipped {m} row(s) without a model. Check them, then click \"Upload sell price list to the system\".",
+ "Đọc được {n} model nhưng không thấy cột giá nào, chỉ cập nhật danh mục model. Bỏ qua {m} dòng không có model.": "Read {n} model(s) but found no price column, so only the model catalog will be updated. Skipped {m} row(s) without a model.",
+ "Đã lưu {n} model ({m} dòng bị bỏ qua). Các cột giá hiện có: {cols}": "Saved {n} model(s) ({m} row(s) skipped). Current price columns: {cols}",
+ "Chưa có bảng giá bán.": "No sell price list yet.",
+ "Nhóm": "Group",
+ "Chỉ hiển thị {n} dòng đầu, hãy dùng ô tìm kiếm để thu hẹp.": "Showing only the first {n} rows, use the search box to narrow down.",
+ "-- Chọn cột giá --": "-- Select price column --",
+ "Chỉ dòng chưa có giá": "Only lines without a price",
+ "Áp giá cho các dòng": "Apply price to the lines",
+ "Vui lòng chọn cột giá.": "Please select a price column.",
+ "Đã áp giá cột \"{col}\" cho {n} dòng.": "Applied price column \"{col}\" to {n} line(s).",
+ "Chưa có giá trong cột này: {list}": "No price in this column for: {list}",
+ "Áp cột giá báo khách": "Price column applied",
+ "Tải bảng giá bán": "Sell price list uploaded",
+ "Chưa có dữ liệu bảng giá để lưu.": "No price list data to save.",
+ "Tối đa 12 cột giá.": "A maximum of 12 price columns.",
+ "Không tìm thấy cột giá này.": "Price column not found."
 },
  zh: {
  "Đăng ký dự án & theo dõi phê duyệt — xin chào": "项目报备与审批跟踪 — 您好",
@@ -871,7 +911,31 @@ const DICT = {
  "Bạn tra cứu quá nhiều lần, vui lòng thử lại sau hoặc nhập tay.": "查询次数过多，请稍后重试或手动填写。",
  "Dịch vụ tra cứu đang bận, vui lòng thử lại sau hoặc nhập tay.": "查询服务繁忙，请稍后重试或手动填写。",
  "Vui lòng chọn phương án thắng cho dự án trước khi chốt CN.": "开具 CN 前请先为项目选择赢单方案。",
- "Báo Vendor có dự án mới": "已通知厂商有新项目"
+ "Báo Vendor có dự án mới": "已通知厂商有新项目",
+ "Bảng giá bán và danh mục model": "销售价格表与型号目录",
+ "Tải file Excel hoặc CSV: cột đầu là Model (có thể thêm cột Nhóm/Group và Mô tả/Description), các cột còn lại là các cột giá VNĐ đã gồm VAT, ví dụ: Giá niêm yết, Giá đại lý, Giá dự án. Danh mục model sẽ hiện trong ô chọn sản phẩm của đại lý; bảng giá chỉ Admin thấy. Ở mỗi dự án, Admin chọn một cột giá rồi bấm \"Áp giá\" để điền đơn giá cho các dòng ngay.": "上传 Excel 或 CSV 文件：第一列为型号（Model），可另加“分组/Group”和“描述/Description”列，其余各列为含增值税的越南盾价格列，例如：标价、经销商价、项目价。型号目录会显示在经销商的产品选择框中；价格表仅 Admin 可见。在每个项目中，Admin 选择一个价格列并点击“应用价格”，即可一次性填入各行单价。",
+ "Cập nhật và thêm vào bảng hiện có": "更新并追加到现有表格",
+ "Thay toàn bộ bảng hiện có": "替换整个现有表格",
+ "Tải bảng giá bán lên hệ thống": "将销售价格表上传到系统",
+ "Cột giá": "价格列",
+ "Không đọc được model nào. Cột đầu của file cần là Model.": "未读取到任何型号。文件第一列必须是型号（Model）。",
+ "Đọc được {n} model và {k} cột giá: {cols}. Bỏ qua {m} dòng không có model. Kiểm tra rồi bấm \"Tải bảng giá bán lên hệ thống\".": "读取到 {n} 个型号和 {k} 个价格列：{cols}。跳过 {m} 行没有型号的数据。请核对后点击“将销售价格表上传到系统”。",
+ "Đọc được {n} model nhưng không thấy cột giá nào, chỉ cập nhật danh mục model. Bỏ qua {m} dòng không có model.": "读取到 {n} 个型号，但没有发现价格列，因此只会更新型号目录。跳过 {m} 行没有型号的数据。",
+ "Đã lưu {n} model ({m} dòng bị bỏ qua). Các cột giá hiện có: {cols}": "已保存 {n} 个型号（跳过 {m} 行）。当前价格列：{cols}",
+ "Chưa có bảng giá bán.": "尚无销售价格表。",
+ "Nhóm": "分组",
+ "Chỉ hiển thị {n} dòng đầu, hãy dùng ô tìm kiếm để thu hẹp.": "仅显示前 {n} 行，请使用搜索框缩小范围。",
+ "-- Chọn cột giá --": "-- 选择价格列 --",
+ "Chỉ dòng chưa có giá": "仅没有价格的行",
+ "Áp giá cho các dòng": "应用价格",
+ "Vui lòng chọn cột giá.": "请选择价格列。",
+ "Đã áp giá cột \"{col}\" cho {n} dòng.": "已将价格列“{col}”应用到 {n} 行。",
+ "Chưa có giá trong cột này: {list}": "该列中暂无价格的型号：{list}",
+ "Áp cột giá báo khách": "应用报价价格列",
+ "Tải bảng giá bán": "上传销售价格表",
+ "Chưa có dữ liệu bảng giá để lưu.": "没有可保存的价格表数据。",
+ "Tối đa 12 cột giá.": "最多 12 个价格列。",
+ "Không tìm thấy cột giá này.": "未找到该价格列。"
 }
 };
 
@@ -949,6 +1013,7 @@ function setLang(l){
     if (pricesRows.length) renderPrices();
     fillLogFilter();
     if (logRows.length) renderLog();
+    if (sellRows.length) renderSellList();
   }
   refreshIndustry('f'); refreshIndustry('ed'); reformatValueInputs();
   ['lineItems','ed_lines'].forEach(id=>{ const r = document.getElementById(id); if (r) updateOptTitles(r); });
@@ -1062,6 +1127,7 @@ function searchChanged(view){
     else if (view === 'vendor') renderVendorList();
     else if (view === 'cn') renderCnList();
     else if (view === 'log') renderLog();
+    else if (view === 'sell') renderSellList();
   }, 120);
 }
 function lineModels(lines){ return (lines || []).map(l=>l.model).join(' '); }
@@ -1366,6 +1432,7 @@ function enterApp(landOn){
   show('tabForm', !isV); show('tabMine', !isV); show('tabAdmin', isA); show('tabSettings', isA); show('tabVendor', isV); show('tabCn', isV || isA);
   if (!document.getElementById('lineItems').children.length) addLine();
   fillFilters();
+  if (!isV) loadCatalog();
   let land = isV ? 'vendor' : (landOn === 'vendor' || landOn === 'cn' || landOn === 'settings' ? 'form' : (landOn || 'form'));
   if (isA && location.hash === '#admin') land = 'admin'; // link trong email: ...#admin mở thẳng trang quản trị
   else if (!isV && location.hash === '#mine') land = 'mine'; // link trong email gửi đại lý: ...#mine
@@ -1402,7 +1469,7 @@ function duplicateTaxcodes(rows){
 async function loadSubmissions(){
   try{
     const r = await api({action:'list', email:session.email, token:session.token});
-    if (r.ok){ allSubs = r.rows; renderAdminList(allSubs); }
+    if (r.ok){ allSubs = r.rows; await loadSellCols(); renderAdminList(allSubs); }
   }catch(e){}
 }
 
@@ -1435,7 +1502,7 @@ function exportExcel(){
         ID:s.ID, NgayDangKy:date, CongTyDoiTac:s.CongTyDoiTac, NguoiDangKy:s.NguoiDangKy, Email:s.Email,
         KhachHangCuoi:s.KhachHangCuoi, MaSoThue:s.MaSoThue, Nganh:s.Nganh, TenDuAn:s.TenDuAn,
         MoTa:s.MoTa, GiaTriUocTinh:s.GiaTriUocTinh, NgayDuKienChot:s.NgayDuKienChot, DoiThu:s.DoiThu,
-        DiaChiKhachHang:s.DiaChiKhachHang, ViTriDiaChi:s.ViTriDiaChi, PhuongAn:(ln.opt||1), Model:ln.model, SoLuong:ln.qty, DonGia_VND_DaGomVAT:ln.price, PhanTramRebate:ln.rebatePct,
+        DiaChiKhachHang:s.DiaChiKhachHang, ViTriDiaChi:s.ViTriDiaChi, CotGia:s.CotGia||'', PhuongAn:(ln.opt||1), Model:ln.model, SoLuong:ln.qty, DonGia_VND_DaGomVAT:ln.price, PhanTramRebate:ln.rebatePct,
         GiaSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit):'', ThanhTienSauRebate_VND_DaGomVAT: finalUnit!==null?Math.round(finalUnit*qty):'',
         TrangThai:s.TrangThai, GhiChuNoiBo:s.GhiChuNoiBo,
         ['GiaNhap_'+CONFIG.VENDOR_CCY]: (rl.ip !== undefined ? rl.ip : ''),
@@ -1547,7 +1614,7 @@ const POLICY = {
     ['Mục đích', 'Hệ thống Project Booking System (PBS) do EAVN vận hành để tiếp nhận đăng ký dự án của đối tác phân phối sản phẩm Aurcore, kiểm tra trùng lặp dự án và theo dõi quá trình xét duyệt, báo giá, hỗ trợ.'],
     ['Thông tin được thu thập', 'Thông tin đối tác (tên công ty, người đăng ký, email đăng nhập); thông tin khách hàng cuối (tên, mã số thuế, địa chỉ, ngành); thông tin dự án (mô tả, giá trị ước tính, ngày dự kiến chốt, đối thủ, sản phẩm và số lượng, vị trí triển khai nếu có); nhật ký truy cập và hoạt động trên hệ thống.'],
     ['Mục đích sử dụng', 'Xử lý đăng ký, đối chiếu mã số thuế và vị trí để tránh trùng dự án, báo giá, tính hỗ trợ rebate, liên hệ và gửi nhắc nhở liên quan đến dự án.'],
-    ['Chia sẻ thông tin', 'Thông tin dự án được chia sẻ cho EAVN và Aurcore Networks (nhà sản xuất) để xét hỗ trợ cho dự án. Aurcore chỉ thấy tên công ty và người đăng ký, không thấy email, số điện thoại của bạn và không thấy giá bán EAVN báo cho khách hàng. EAVN không bán dữ liệu cho bên thứ ba.'],
+    ['Chia sẻ thông tin', 'Thông tin dự án được chia sẻ cho EAVN và Aurcore Networks (nhà sản xuất) để xét hỗ trợ cho dự án. Aurcore chỉ thấy tên công ty và người đăng ký, không thấy email, số điện thoại của bạn và không thấy giá bán EAVN báo cho khách hàng. Dữ liệu được lưu và xử lý trên dịch vụ của Google (Google Sheets, Apps Script) và dịch vụ gửi email. EAVN không bán dữ liệu cho bên thứ ba.'],
     ['Trách nhiệm của đối tác', 'Bạn cam kết có quyền hợp pháp cung cấp thông tin về khách hàng cuối, thông tin cung cấp là chính xác, không đưa vào dữ liệu cá nhân không cần thiết hoặc nhạy cảm, giữ bí mật tài khoản và mã OTP, và không tiết lộ báo giá, mức rebate cho bên không liên quan.'],
     ['An toàn thông tin', 'Hệ thống dùng xác thực email bằng mã OTP, phân quyền theo vai trò (Admin, Vendor, đại lý), truyền dữ liệu qua kết nối mã hoá HTTPS và ghi nhật ký hoạt động để theo dõi thay đổi. EAVN áp dụng các biện pháp bảo vệ hợp lý; tuy nhiên không hệ thống nào an toàn tuyệt đối. Khi xảy ra sự cố ảnh hưởng đến dữ liệu, EAVN sẽ xử lý và thông báo theo quy định pháp luật.'],
     ['Thời gian lưu trữ', 'Dữ liệu được lưu trong thời gian cần thiết cho các mục đích nêu trên và theo yêu cầu của pháp luật, hợp đồng; sau đó sẽ được xoá hoặc ẩn danh.'],
@@ -1558,7 +1625,7 @@ const POLICY = {
     ['Purpose', 'The Project Booking System (PBS) is operated by EAVN to receive project registrations from partners distributing Aurcore products, to detect duplicate projects, and to track review, quotation and support.'],
     ['Information collected', 'Partner information (company name, registrant, login email); end-customer information (name, tax code, address, industry); project information (description, estimated value, expected closing date, competitors, products and quantities, deployment location if provided); access and activity logs.'],
     ['How it is used', 'To process registrations, match tax codes and locations to avoid duplicate projects, prepare quotations, calculate rebate support, and contact you or send reminders about the project.'],
-    ['Sharing', 'Project information is shared with EAVN and Aurcore Networks (the manufacturer) to assess support for the project. Aurcore sees only your company name and registrant, not your email or phone number, and not the selling prices EAVN quotes to customers. EAVN does not sell data to third parties.'],
+    ['Sharing', 'Project information is shared with EAVN and Aurcore Networks (the manufacturer) to assess support for the project. Aurcore sees only your company name and registrant, not your email or phone number, and not the selling prices EAVN quotes to customers. Data is stored and processed on Google services (Google Sheets, Apps Script) and an email delivery service. EAVN does not sell data to third parties.'],
     ['Partner responsibilities', 'You confirm that you are legally entitled to provide the end-customer information, that it is accurate, that you will not enter unnecessary or sensitive personal data, that you will keep your account and OTP codes confidential, and that you will not disclose quotations or rebate levels to unrelated parties.'],
     ['Information security', 'The system uses email OTP authentication, role-based access (Admin, Vendor, partner), encrypted HTTPS connections and an activity log to track changes. EAVN applies reasonable safeguards; however, no system is absolutely secure. If an incident affects data, EAVN will handle it and notify as required by law.'],
     ['Retention', 'Data is kept for as long as needed for the purposes above and as required by law or contract, and is then deleted or anonymised.'],
@@ -1569,7 +1636,7 @@ const POLICY = {
     ['目的', 'Project Booking System（PBS）由 EAVN 运营，用于接收分销 Aurcore 产品的合作伙伴的项目报备，检查重复项目，并跟踪审核、报价与支持。'],
     ['收集的信息', '合作伙伴信息（公司名称、报备人、登录邮箱）；最终客户信息（名称、税号、地址、行业）；项目信息（描述、预计金额、预计成交日期、竞争对手、产品及数量、如有则含部署地点）；访问与操作日志。'],
     ['使用目的', '处理报备、比对税号和地点以避免重复项目、报价、计算返利支持、联系您以及发送与项目相关的提醒。'],
-    ['信息共享', '项目信息会与 EAVN 和 Aurcore Networks（制造商）共享，以评估对项目的支持。Aurcore 仅能看到您的公司名称和报备人，看不到您的邮箱、电话，也看不到 EAVN 向客户报出的销售价格。EAVN 不会向第三方出售数据。'],
+    ['信息共享', '项目信息会与 EAVN 和 Aurcore Networks（制造商）共享，以评估对项目的支持。Aurcore 仅能看到您的公司名称和报备人，看不到您的邮箱、电话，也看不到 EAVN 向客户报出的销售价格。数据存储和处理于 Google 服务（Google Sheets、Apps Script）及邮件发送服务。EAVN 不会向第三方出售数据。'],
     ['合作伙伴责任', '您确认有合法权利提供最终客户信息，所提供信息准确，不录入不必要或敏感的个人数据，妥善保管账户和 OTP 验证码，并且不向无关方披露报价和返利水平。'],
     ['信息安全', '系统采用邮箱 OTP 验证、基于角色的权限（Admin、厂商、经销商）、HTTPS 加密传输，并记录操作日志以跟踪变更。EAVN 采取合理的保护措施，但任何系统都不可能绝对安全。如发生影响数据的事件，EAVN 将按法律规定处理并通知。'],
     ['保存期限', '数据在上述目的所需期间以及法律或合同要求的期限内保存，之后将被删除或匿名化。'],
@@ -1703,6 +1770,7 @@ function renderAdminList(rows){
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
     tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Giá nhập')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Rebate Vendor (%)')) + '</th><th>' + esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th></tr></thead>';
+    if (sellCols.length) card.appendChild(buildApplyBar(s));
     const rc = rcAll.Lines || [];
     const tbody=document.createElement('tbody');
     lines.forEach((ln,idx)=>{
@@ -1731,6 +1799,7 @@ function renderAdminList(rows){
       if (multi && !rcAll.WonOpt) info.push(t('Tổng rebate Vendor') + ': ' + opts.map(n=>t('PA{n}', {n: n}) + ' ' + fmtVendor((rcAll.ByOpt || {})[n] || 0)).join(' · '));
       else info.push(t('Tổng rebate Vendor') + ': ' + fmtVendor(rcAll.RebateTotal) + (rcAll.Frozen ? ' (' + t('Đã chốt CN') + ')' : ''));
     }
+    if (s.CotGia) info.push(t('Cột giá') + ': ' + s.CotGia);
     if (s.VendorNote) info.push(t('Ghi chú Vendor') + ': ' + s.VendorNote);
     if (s.NgayWon) info.push(t('Ngày Won') + ': ' + String(s.NgayWon).slice(0,10));
     if (s.SoCN) info.push(t('Số CN') + ': ' + s.SoCN);
@@ -1821,7 +1890,7 @@ let logRows = [];
 const ACTION_LABEL = {
   'project.create':'Đăng ký dự án', 'project.update':'Đại lý sửa dự án', 'status.update':'Đổi trạng thái', 'price.update':'Nhập giá / rebate',
   'quote.send':'Gửi báo giá', 'vendor.rebate':'Vendor nhập rebate', 'cn.issue':'Chốt CN', 'user.add':'Thêm email', 'user.update':'Đổi vai trò',
-  'user.delete':'Xoá email', 'vendor.notify':'Báo Vendor có dự án mới', 'prices.upload':'Tải bảng giá nhập', 'login':'Đăng nhập', 'reminder.run':'Gửi nhắc nhở'
+  'user.delete':'Xoá email', 'vendor.notify':'Báo Vendor có dự án mới', 'price.apply':'Áp cột giá báo khách', 'sell.upload':'Tải bảng giá bán', 'prices.upload':'Tải bảng giá nhập', 'login':'Đăng nhập', 'reminder.run':'Gửi nhắc nhở'
 };
 function fillLogFilter(){
   const sel = document.getElementById('logRole'); const cur = sel.value || 'all';
@@ -2075,6 +2144,165 @@ function exportCnExcel(){
   XLSX.writeFile(wb, 'Aurcore_CN_Report_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
+// ====== BẢNG GIÁ BÁN + DANH MỤC MODEL (Admin) ======
+let sellCols = [], sellRows = [], pendingSell = null;
+const applyNotes = {};
+function looseNum(v){
+  if (typeof v === 'number') return v;
+  let s = String(v === undefined || v === null ? '' : v).trim();
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d+,\d{1,2}$/.test(s)) s = s.replace(',', '.');
+  return parseFloat(s.replace(/[^0-9.\-]/g, ''));
+}
+// Nhận diện cột theo tiêu đề: Model / Nhóm / Mô tả; mọi cột còn lại có số là cột giá. Không có tiêu đề model thì lấy cột 1 làm Model.
+function parseSellRows(aoa){
+  if (!aoa || !aoa.length) return {cols:[], items:[], skipped:0};
+  const head = aoa[0].map(x=>String(x === undefined || x === null ? '' : x).trim());
+  const low = head.map(x=>x.toLowerCase());
+  let mCol = low.findIndex(x=>/^(model|sku|part|pn|mã|ma |sản phẩm|san pham|product)/.test(x));
+  const gCol = low.findIndex(x=>/^(group|nhóm|nhom|dòng|dong|category|loại|loai|series)/.test(x));
+  const dCol = low.findIndex(x=>/^(desc|mô tả|mo ta|description|tên|ten |name)/.test(x));
+  if (mCol < 0) mCol = 0;
+  const priceCols = [];
+  head.forEach((name, c)=>{
+    if (c === mCol || c === gCol || c === dCol || !name) return;
+    if (aoa.slice(1).some(r=>r[c] !== '' && r[c] !== undefined && r[c] !== null && isFinite(looseNum(r[c])))) priceCols.push({c: c, name: name});
+  });
+  const map = {}, order = []; let skipped = 0;
+  aoa.slice(1).forEach(r=>{
+    const model = String(r[mCol] === undefined || r[mCol] === null ? '' : r[mCol]).trim();
+    if (!model){ if (r.some(x=>String(x === undefined || x === null ? '' : x).trim() !== '')) skipped++; return; }
+    const k = model.toUpperCase();
+    const row = {model: model, group: gCol >= 0 ? String(r[gCol] || '').trim() : '', desc: dCol >= 0 ? String(r[dCol] || '').trim() : '',
+      prices: priceCols.map(pc=>{ const v = looseNum(r[pc.c]); return (r[pc.c] === '' || r[pc.c] === undefined || r[pc.c] === null || !isFinite(v) || v < 0) ? '' : v; })};
+    if (!(k in map)){ order.push(k); map[k] = row; }
+    else{ // model xuất hiện nhiều lần trong file: ô có dữ liệu của dòng sau ghi đè, ô trống giữ giá trị của dòng trước
+      const e = map[k]; e.model = model; if (row.group) e.group = row.group; if (row.desc) e.desc = row.desc;
+      row.prices.forEach((v, i)=>{ if (v !== '') e.prices[i] = v; });
+    }
+  });
+  return {cols: priceCols.map(pc=>pc.name), items: order.map(k=>map[k]), skipped: skipped};
+}
+
+function readSellFile(ev){
+  const f = ev.target.files && ev.target.files[0];
+  pendingSell = null;
+  ['sellUploadBtn','sellOptions'].forEach(id=>{ document.getElementById(id).style.display = 'none'; });
+  document.getElementById('sellPreview').innerHTML = ''; vendorMsg('sellMsg', '');
+  if (!f) return;
+  if (typeof XLSX === 'undefined'){ vendorMsg('sellMsg', t('Không tải được thư viện đọc Excel. Kiểm tra kết nối mạng rồi tải lại trang.')); return; }
+  const rd = new FileReader();
+  rd.onload = e=>{
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+      const res = parseSellRows(aoa);
+      if (!res.items.length){ vendorMsg('sellMsg', t('Không đọc được model nào. Cột đầu của file cần là Model.')); return; }
+      pendingSell = res;
+      const text = res.cols.length
+        ? t('Đọc được {n} model và {k} cột giá: {cols}. Bỏ qua {m} dòng không có model. Kiểm tra rồi bấm "Tải bảng giá bán lên hệ thống".', {n: res.items.length, k: res.cols.length, cols: res.cols.join(', '), m: res.skipped})
+        : t('Đọc được {n} model nhưng không thấy cột giá nào, chỉ cập nhật danh mục model. Bỏ qua {m} dòng không có model.', {n: res.items.length, m: res.skipped});
+      document.getElementById('sellPreview').innerHTML = '<div class="msg ok">' + esc(text) + '</div>';
+      document.getElementById('sellOptions').style.display = ''; document.getElementById('sellUploadBtn').style.display = '';
+    }catch(err){ vendorMsg('sellMsg', t('Không đọc được file. Hãy dùng file Excel (.xlsx) hoặc CSV có 2 cột: Model và Giá nhập.')); }
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+async function uploadSell(){
+  if (!pendingSell) return;
+  const btn = document.getElementById('sellUploadBtn'); btn.disabled = true;
+  const mode = (document.querySelector('input[name=sellMode]:checked') || {value:'merge'}).value;
+  try{
+    const r = await api({action:'saveSellPrices', email:session.email, token:session.token, columns:pendingSell.cols, items:pendingSell.items, mode:mode});
+    if (r.ok){
+      pendingSell = null; document.getElementById('sellFile').value = '';
+      document.getElementById('sellPreview').innerHTML = ''; btn.style.display = 'none'; document.getElementById('sellOptions').style.display = 'none';
+      await loadSell(); loadCatalog();
+      vendorMsg('sellMsg', t('Đã lưu {n} model ({m} dòng bị bỏ qua). Các cột giá hiện có: {cols}', {n: r.saved, m: r.skipped, cols: (r.columns || []).join(', ') || '-'}), 'ok');
+    }else vendorMsg('sellMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('sellMsg', t('Lỗi kết nối tới hệ thống.')); }
+  btn.disabled = false;
+}
+
+async function loadSell(){
+  try{
+    const r = await api({action:'listSellPrices', email:session.email, token:session.token});
+    if (r.ok){ sellCols = r.columns; sellRows = r.rows; renderSellList(); }
+    else vendorMsg('sellMsg', te(r.error) || t('Lỗi kết nối.'));
+  }catch(e){ vendorMsg('sellMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+async function loadSellCols(){
+  try{
+    const r = await api({action:'listSellPrices', email:session.email, token:session.token, columnsOnly:true});
+    if (r.ok) sellCols = r.columns;
+  }catch(e){}
+}
+function renderSellList(){
+  const box = document.getElementById('sellList'); box.innerHTML = '';
+  const st = searchState('qSell');
+  const rows = sellRows.filter(x=>searchMatch(st.q, st.exact, [x.Model, x.Group, x.Desc].join(' | ')));
+  setSearchCount('qSell', rows.length, sellRows.length);
+  if (!sellRows.length){ box.innerHTML = '<div class="hint">' + esc(t('Chưa có bảng giá bán.')) + '</div>'; return; }
+  const shown = rows.slice(0, 300);
+  const tbl = document.createElement('table'); tbl.className = 'lines-table';
+  tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('Nhóm')) + '</th><th>' + esc(t('Mô tả')) + '</th>' + sellCols.map(c=>'<th>' + esc(c) + '</th>').join('') + '</tr></thead>';
+  const tb = document.createElement('tbody');
+  shown.forEach(x=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + esc(x.Model) + '</td><td>' + esc(x.Group) + '</td><td>' + esc(x.Desc) + '</td>' + sellCols.map((_, i)=>'<td>' + esc(x.Prices[i] === '' || x.Prices[i] === undefined ? '-' : groupDigits(x.Prices[i])) + '</td>').join('');
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb); box.appendChild(tbl);
+  if (rows.length > shown.length){ const m = document.createElement('div'); m.className = 'hint'; m.textContent = t('Chỉ hiển thị {n} dòng đầu, hãy dùng ô tìm kiếm để thu hẹp.', {n: shown.length}); box.appendChild(m); }
+}
+
+// Danh mục model (không kèm giá) hiện trong ô chọn sản phẩm của mọi người dùng không phải Vendor.
+async function loadCatalog(){
+  try{
+    const r = await api({action:'listCatalog', email:session.email, token:session.token});
+    if (!r.ok) return;
+    const have = {};
+    Object.keys(PRODUCTS).forEach(g=>PRODUCTS[g].forEach(m=>{ have[m.toUpperCase()] = true; }));
+    r.rows.forEach(x=>{
+      const k = String(x.Model).toUpperCase();
+      if (have[k]) return;
+      have[k] = true;
+      const g = x.Group || 'Khác / Other';
+      (PRODUCTS[g] = PRODUCTS[g] || []).push(x.Model);
+    });
+    document.querySelectorAll('.li-model').forEach(sel=>{ const cur = sel.value; sel.innerHTML = productOptionsHTML(); sel.value = cur; translateStatic(sel); });
+  }catch(e){}
+}
+
+// Thanh "Áp giá" trong thẻ dự án của Admin: chọn cột giá rồi điền đơn giá cho các dòng model.
+function buildApplyBar(s){
+  const bar = document.createElement('div'); bar.className = 'applybar';
+  const csel = document.createElement('select');
+  const p0 = document.createElement('option'); p0.value = ''; p0.textContent = t('-- Chọn cột giá --'); csel.appendChild(p0);
+  sellCols.forEach(c=>{ const o = document.createElement('option'); o.value = c; o.textContent = c; if (s.CotGia === c) o.selected = true; csel.appendChild(o); });
+  const lab = document.createElement('label'); lab.className = 'chk';
+  const chk = document.createElement('input'); chk.type = 'checkbox';
+  const sp = document.createElement('span'); sp.textContent = t('Chỉ dòng chưa có giá');
+  lab.appendChild(chk); lab.appendChild(sp);
+  const btn = document.createElement('button'); btn.className = 'btn-ghost btn-sm'; btn.textContent = t('Áp giá cho các dòng');
+  const note = document.createElement('span'); note.className = 'hint'; note.textContent = applyNotes[s.ID] || '';
+  btn.onclick = async ()=>{
+    if (!csel.value){ note.textContent = t('Vui lòng chọn cột giá.'); return; }
+    btn.disabled = true;
+    try{
+      const r = await api({action:'applyPriceColumn', email:session.email, token:session.token, id:s.ID, column:csel.value, onlyEmpty:chk.checked});
+      if (r.ok){
+        applyNotes[s.ID] = t('Đã áp giá cột "{col}" cho {n} dòng.', {col: csel.value, n: r.applied}) + (r.missing.length ? ' ' + t('Chưa có giá trong cột này: {list}', {list: r.missing.join(', ')}) : '');
+        await loadSubmissions();
+      }else note.textContent = te(r.error) || t('Gửi thất bại.');
+    }catch(e){ note.textContent = t('Lỗi kết nối.'); }
+    btn.disabled = false;
+  };
+  bar.appendChild(csel); bar.appendChild(lab); bar.appendChild(btn); bar.appendChild(note);
+  return bar;
+}
+
 // ====== THIẾT LẬP (Admin): phân quyền email + bảng giá nhập khẩu ======
 let usersRows = [], usersSelf = '', pricesRows = [], pendingPrices = [], pendingSkipped = 0;
 const ROLE_LABEL = {Admin:'Admin', Partner:'Đại lý (Partner)', Vendor:'Vendor (Aurcore)'};
@@ -2101,6 +2329,7 @@ async function loadSettings(){
     else vendorMsg('pricesMsg', te(r2.error) || t('Lỗi kết nối.'));
   }catch(e){ vendorMsg('pricesMsg', t('Lỗi kết nối tới hệ thống.')); }
   loadLog();
+  loadSell();
 }
 
 function renderUsers(){

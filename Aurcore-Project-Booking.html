@@ -74,6 +74,27 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 .opt-group{border:1px dashed var(--border);border-radius:10px;padding:10px;margin-bottom:10px;}
 .opt-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .ok-text{color:var(--ok);}
+.st-NeedInfo{background:rgba(192,57,41,.12);color:var(--bad);}
+.secretbox{font-family:Consolas,Menlo,monospace;font-size:18px;letter-spacing:2px;background:var(--bg);border:2px dashed var(--gold);border-radius:8px;padding:10px 14px;margin:8px 0;word-break:break-all;}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin:2px 4px 2px 0;background:rgba(36,42,92,.1);color:var(--navy);}
+.pill.bad{background:rgba(192,57,41,.14);color:var(--bad);}
+.pill.warn{background:rgba(183,121,31,.16);color:var(--warn);}
+.pill.ok{background:rgba(26,138,76,.15);color:var(--ok);}
+.bar{height:10px;border-radius:5px;background:var(--navy);min-width:2px;}
+.barrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0;}
+.barrow .lbl{width:150px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 14px;}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.kpi b{display:block;font-size:20px;color:var(--navy);}
+.kpi span{font-size:11.5px;color:var(--muted);}
+.panel{margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;}
+.ptabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.ptabs button.on{background:var(--navy);color:#fff;}
+.tl{border-left:3px solid var(--border);margin:6px 0 6px 6px;padding-left:10px;font-size:12.5px;}
+.tl div{margin-bottom:6px;}
+.cm{background:var(--bg);border-radius:8px;padding:6px 10px;margin:5px 0;font-size:13px;}
+.cm.mine{background:rgba(240,168,34,.14);}
+.verfooter{text-align:center;font-size:11px;color:var(--muted);margin:14px 0;}
 .applybar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;}
 .applybar select{width:auto;min-width:170px;}
 .st-Won{background:rgba(26,138,76,.22);color:var(--ok);}
@@ -92,6 +113,9 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   <div class="tab active" id="tabForm" onclick="showView('form')">Đăng ký dự án</div>
   <div class="tab" id="tabMine" onclick="showView('mine')">Dự án của tôi</div>
   <div class="tab" id="tabAdmin" style="display:none" onclick="showView('admin')">Quản trị</div>
+  <div class="tab" id="tabDash" style="display:none" onclick="showView('dash')">Tổng quan</div>
+  <div class="tab" id="tabConf" style="display:none" onclick="showView('conf')">Xung đột</div>
+  <div class="tab" id="tabPart" style="display:none" onclick="showView('part')">Đối tác</div>
   <div class="tab" id="tabSettings" style="display:none" onclick="showView('settings')">Thiết lập</div>
   <div class="tab" id="tabVendor" style="display:none" onclick="showView('vendor')">Dự án đăng ký</div>
   <div class="tab" id="tabCn" style="display:none" onclick="showView('cn')">Tổng hợp CN</div>
@@ -100,12 +124,13 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 
 <div id="viewForm">
   <div class="card">
+    <div id="draftBanner" data-noi18n></div>
     <div class="row">
       <div><label>Công ty đối tác (Reseller) *</label><input id="f_company"></div>
       <div><label>Người đăng ký *</label><input id="f_contact"></div>
     </div>
     <div class="row">
-      <div><label>Khách hàng cuối (End User) *</label><input id="f_customer"></div>
+      <div><label>Khách hàng cuối (End User) *</label><input id="f_customer" onblur="checkDup()"></div>
       <div><label>Mã số thuế khách hàng cuối *</label><input id="f_taxcode" onblur="onTaxBlur()" oninput="taxSeq++"></div>
     </div>
     <div class="hint" id="taxHint" data-noi18n></div>
@@ -138,6 +163,15 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
     <div class="hint" style="margin-bottom:6px;">Mỗi phương án là một bộ model và số lượng đề xuất riêng (ví dụ: phương án 1 cấu hình tiết kiệm, phương án 2 cấu hình dự phòng). Khi dự án thắng, EAVN xác nhận phương án được chọn.</div>
     <div id="lineItems"></div>
     <button class="btn-ghost btn-sm" onclick="addOption('lineItems')">+ Thêm phương án</button>
+    <div id="aiBox" class="subcard" style="display:none;margin-top:14px;">
+      <b>Trợ lý BOQ (AI)</b>
+      <div class="hint">Dán BOQ của khách (hoặc tải file Excel/CSV), AI sẽ gợi ý model Aurcore tương đương. Đây chỉ là gợi ý: hãy kiểm tra thông số trước khi đăng ký.</div>
+      <textarea id="aiText" style="min-height:90px;" placeholder="Dán danh sách thiết bị trong BOQ vào đây..."></textarea>
+      <div class="toolbar"><input type="file" id="aiFile" accept=".xlsx,.xls,.csv" onchange="aiReadFile(event)" style="width:auto;"></div>
+      <label class="chk"><input type="checkbox" id="aiConsent"> <span>Tôi đồng ý gửi nội dung BOQ này tới dịch vụ AI (Anthropic) để lấy gợi ý. Tôi sẽ không đưa thông tin cá nhân hoặc bí mật không cần thiết vào BOQ.</span></label>
+      <button class="btn-primary btn-sm" style="margin-top:8px;" onclick="aiSuggest()">Gợi ý model</button>
+      <div id="aiMsg" data-noi18n></div><div id="aiResult" data-noi18n></div>
+    </div>
     <div style="margin-top:16px;"><button class="btn-primary" onclick="submitForm()">Gửi đăng ký</button>
       <button class="resend" style="margin-left:12px" onclick="openPolicy('view')">Chính sách bảo mật và an toàn thông tin</button></div>
     <div id="formMsg" data-noi18n></div>
@@ -148,6 +182,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   <div class="card">
     <div class="toolbar"><button class="btn-ghost" onclick="loadMine()">Tải lại</button></div>
     <div class="hint" style="margin-bottom:8px;">Dự án do chính email của bạn đăng ký. Giá &amp; % rebate do EAVN cập nhật sau khi xét duyệt. Mọi số tiền tính bằng VNĐ, đã bao gồm VAT.</div>
+    <div id="companyCard" data-noi18n></div>
     <div id="mineMsg" data-noi18n></div>
     <div class="searchbar"><input id="qMine" type="search" placeholder="Tìm kiếm (gõ để lọc tự động)..." oninput="searchChanged('mine')"><label class="chk"><input type="checkbox" id="qMineExact" onchange="searchChanged('mine')"> <span>Chính xác</span></label><span class="hint" id="qMineCount" data-noi18n></span></div>
     <div id="mineList" data-noi18n></div>
@@ -188,7 +223,29 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
   </div>
 </div>
 
+<div id="viewDash" style="display:none;"><div class="card"><div class="toolbar"><button class="btn-ghost" onclick="loadDash()">Tải lại</button></div><div id="dashMsg" data-noi18n></div><div id="dashBox" data-noi18n></div></div></div>
+<div id="viewConf" style="display:none;"><div class="card"><div class="hint">Các đăng ký có thể trùng với dự án đã có (cùng mã số thuế gốc hoặc tên khách hàng gần giống). Xem hai bên cạnh nhau rồi quyết định.</div><div class="toolbar" style="margin-top:8px;"><button class="btn-ghost" onclick="loadConf()">Tải lại</button></div><div id="confMsg" data-noi18n></div><div id="confBox" data-noi18n></div></div></div>
+<div id="viewPart" style="display:none;"><div class="card"><div class="toolbar"><button class="btn-ghost" onclick="loadPart()">Tải lại</button></div><div id="partMsg" data-noi18n></div><div id="partBox" data-noi18n></div></div></div>
 <div id="viewSettings" style="display:none;">
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:15px;">Sức khoẻ hệ thống</h3>
+    <div class="hint">Phiên bản máy chủ, hạn mức email, hàng đợi gửi lại, sao lưu và các trigger tự động. Hệ thống tự sao lưu Sheet mỗi đêm và tự gửi lại email bị lỗi.</div>
+    <div id="healthBox" data-noi18n></div>
+    <div class="toolbar" style="margin-top:8px;"><button class="btn-ghost btn-sm" onclick="loadHealth()">Tải lại</button><button class="btn-ghost btn-sm" onclick="runBackup()">Sao lưu ngay</button><button class="btn-ghost btn-sm" onclick="runQueue()">Gửi lại email đang chờ</button></div>
+    <div id="healthMsg" data-noi18n></div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:15px;">Bảo mật tài khoản (xác thực 2 bước)</h3>
+    <div id="tfaBox" data-noi18n></div>
+    <div id="tfaSetup" style="display:none;">
+      <div class="hint">Thêm khoá dưới đây vào ứng dụng Authenticator (chọn "Nhập khoá thiết lập"), rồi nhập mã 6 số để xác nhận.</div>
+      <div class="secretbox" id="tfaSecret" data-noi18n></div>
+      <div class="hint"><a id="tfaUri" href="#">Mở trong ứng dụng Authenticator</a></div>
+      <label>Mã 6 số</label><input id="tfaCode" inputmode="numeric" maxlength="6">
+      <button class="btn-primary btn-sm" style="margin-top:8px;" onclick="confirm2fa()">Xác nhận và bật</button>
+    </div>
+    <div id="tfaMsg" data-noi18n></div>
+  </div>
   <div class="card">
     <h3 style="margin:0 0 6px;font-size:15px;">Phân quyền email</h3>
     <div class="hint" style="margin-bottom:8px;">Admin: xem và duyệt tất cả dự án, nhận email thông báo khi có dự án mới. Partner: đại lý đăng ký dự án. Vendor: Aurcore (email @aurcore.net tự động là Vendor, trừ khi được đặt là Admin), nhận email thông báo khi có dự án mới; thêm trước email Vendor ở đây để họ nhận thông báo ngay cả khi chưa đăng nhập lần nào. Xoá một email sẽ đưa người đó về quyền mặc định khi đăng nhập lại.</div>
@@ -198,6 +255,9 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
     </div>
     <div class="row">
       <div><label>Vai trò</label><select id="uRole" data-noi18n></select></div>
+      <div><label>Công ty đối tác</label><select id="uCompany" data-noi18n></select></div>
+    </div>
+    <div class="row">
       <div style="display:flex;align-items:flex-end;"><button class="btn-primary" onclick="addUser()">Thêm / cập nhật</button></div>
     </div>
     <div id="usersMsg" data-noi18n></div>
@@ -272,6 +332,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
     <div id="cnAdminBar" style="display:none;margin-top:12px;">
       <button class="btn-ghost btn-sm" onclick="cnSelectPending()">Chọn tất cả chưa chốt CN</button>
       <label>Số CN (để trống = tự đánh số)</label><input id="cnNumber">
+      <label class="chk" style="margin-top:6px;"><input type="checkbox" id="cnAllowReg"> <span>Cho phép chốt theo số lượng đăng ký (dự án chưa có đơn hàng thực tế)</span></label>
       <div style="margin-top:8px;"><button class="btn-primary" onclick="issueCn()">Chốt CN cho các dự án đã chọn</button></div>
     </div>
     <div id="cnMsg" data-noi18n></div>
@@ -279,10 +340,12 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 </div>
 
 <div id="viewAdmin" style="display:none;">
+  <div id="verBanner" data-noi18n></div>
   <div class="card">
     <div class="toolbar">
       <button class="btn-ghost" onclick="loadSubmissions()">Tải lại</button>
       <button class="btn-primary" onclick="exportExcel()">Xuất Excel</button>
+      <select id="aFilter" data-noi18n onchange="aFilterVal=this.value; renderAdminList(allSubs)" style="width:auto;"></select>
     </div>
     <div class="searchbar"><input id="qAdmin" type="search" placeholder="Tìm kiếm (gõ để lọc tự động)..." oninput="searchChanged('admin')"><label class="chk"><input type="checkbox" id="qAdminExact" onchange="searchChanged('admin')"> <span>Chính xác</span></label><span class="hint" id="qAdminCount" data-noi18n></span></div>
     <div id="subList" data-noi18n></div>
@@ -290,6 +353,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 </div>
 </div>
 
+<div class="verfooter" id="verFooter" data-noi18n></div>
 <div class="wrap" id="loginScreen">
   <div class="brandbar" id="brandbarLogin"></div>
   <div class="card">
@@ -314,6 +378,18 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
       </div>
     </div>
 
+    <div id="stepTotp" style="display:none;">
+      <div class="hint">Tài khoản Admin có bật xác thực 2 bước. Nhập mã 6 số từ ứng dụng Authenticator (Google Authenticator, Microsoft Authenticator...) của bạn.</div>
+      <label>Mã Authenticator</label><input id="totpCode" inputmode="numeric" maxlength="6" placeholder="------">
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;"><button class="btn-primary" onclick="verifyTotpLogin()">Xác nhận</button><button class="btn-ghost" onclick="backToEmail()">Đổi email</button></div>
+    </div>
+    <div id="stepEnroll" style="display:none;">
+      <div class="hint">Hệ thống bắt buộc xác thực 2 bước cho Admin. Thêm khoá dưới đây vào ứng dụng Authenticator (chọn "Nhập khoá thiết lập"), rồi nhập mã 6 số mà ứng dụng hiển thị.</div>
+      <div class="secretbox" id="enrollSecret" data-noi18n></div>
+      <div class="hint"><a id="enrollUri" href="#">Mở trong ứng dụng Authenticator</a></div>
+      <label>Mã 6 số</label><input id="enrollCode" inputmode="numeric" maxlength="6" placeholder="------">
+      <div style="margin-top:12px;"><button class="btn-primary" onclick="enrollLogin()">Hoàn tất thiết lập và đăng nhập</button></div>
+    </div>
     <div id="loginMsg" data-noi18n></div>
   </div>
 </div>
@@ -321,7 +397,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 <script>
 // ====== CẤU HÌNH — DÁN WEB APP URL CỦA APPS SCRIPT VÀO ĐÂY (giữ nguyên trong dấu nháy đơn) ======
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbyPNa2N778z_8KA8bHGPW0AToGs3nVRneFCkTgpp2-ceUHxqsWDMUs3kKxIKODlIxRKJg/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyJdA6DI7GhkCBnNB3d_YHNuNaazVO91uTX_LX1FbKzy9yVLFU1WQvaQ5JezD_6POVDZA/exec',
   // Để trống = dùng OpenStreetMap (miễn phí). Dán Google Maps API Key vào đây = dùng Google Maps tiếng Việt.
   GOOGLE_MAPS_KEY: '',
   // Đơn vị tiền của rebate Vendor (chỉ là nhãn hiển thị, ví dụ 'USD' hoặc 'VNĐ').
@@ -644,7 +720,268 @@ const DICT = {
  "Tải bảng giá bán": "Sell price list uploaded",
  "Chưa có dữ liệu bảng giá để lưu.": "No price list data to save.",
  "Tối đa 12 cột giá.": "A maximum of 12 price columns.",
- "Không tìm thấy cột giá này.": "Price column not found."
+ "Không tìm thấy cột giá này.": "Price column not found.",
+ "Tổng quan": "Overview",
+ "Xung đột": "Conflicts",
+ "Trợ lý BOQ (AI)": "BOQ assistant (AI)",
+ "Dán BOQ của khách (hoặc tải file Excel/CSV), AI sẽ gợi ý model Aurcore tương đương. Đây chỉ là gợi ý: hãy kiểm tra thông số trước khi đăng ký.": "Paste the customer's BOQ (or upload an Excel/CSV file) and the AI will suggest equivalent Aurcore models. These are only suggestions: please check the specifications before registering.",
+ "Tôi đồng ý gửi nội dung BOQ này tới dịch vụ AI (Anthropic) để lấy gợi ý. Tôi sẽ không đưa thông tin cá nhân hoặc bí mật không cần thiết vào BOQ.": "I agree to send this BOQ to the AI service (Anthropic) to get suggestions. I will not put personal or unnecessary confidential information in the BOQ.",
+ "Gợi ý model": "Suggest models",
+ "Các đăng ký có thể trùng với dự án đã có (cùng mã số thuế gốc hoặc tên khách hàng gần giống). Xem hai bên cạnh nhau rồi quyết định.": "Registrations that may overlap an existing project (same root tax code or a very similar customer name). Compare both sides, then decide.",
+ "Sức khoẻ hệ thống": "System health",
+ "Phiên bản máy chủ, hạn mức email, hàng đợi gửi lại, sao lưu và các trigger tự động. Hệ thống tự sao lưu Sheet mỗi đêm và tự gửi lại email bị lỗi.": "Backend version, email quota, retry queue, backups and automatic triggers. The system backs up the Sheet every night and retries failed emails automatically.",
+ "Sao lưu ngay": "Back up now",
+ "Gửi lại email đang chờ": "Retry queued emails",
+ "Bảo mật tài khoản (xác thực 2 bước)": "Account security (two-step verification)",
+ "Thêm khoá dưới đây vào ứng dụng Authenticator (chọn \"Nhập khoá thiết lập\"), rồi nhập mã 6 số để xác nhận.": "Add the key below to your Authenticator app (choose \"Enter a setup key\"), then enter the 6-digit code to confirm.",
+ "Mở trong ứng dụng Authenticator": "Open in the Authenticator app",
+ "Mã 6 số": "6-digit code",
+ "Xác nhận và bật": "Confirm and enable",
+ "Công ty đối tác": "Partner company",
+ "Cho phép chốt theo số lượng đăng ký (dự án chưa có đơn hàng thực tế)": "Allow closing on registered quantities (projects without an actual order)",
+ "Tài khoản Admin có bật xác thực 2 bước. Nhập mã 6 số từ ứng dụng Authenticator (Google Authenticator, Microsoft Authenticator...) của bạn.": "This Admin account has two-step verification enabled. Enter the 6-digit code from your Authenticator app (Google Authenticator, Microsoft Authenticator...).",
+ "Mã Authenticator": "Authenticator code",
+ "Hệ thống bắt buộc xác thực 2 bước cho Admin. Thêm khoá dưới đây vào ứng dụng Authenticator (chọn \"Nhập khoá thiết lập\"), rồi nhập mã 6 số mà ứng dụng hiển thị.": "Two-step verification is mandatory for Admins. Add the key below to your Authenticator app (choose \"Enter a setup key\"), then enter the 6-digit code the app shows.",
+ "Hoàn tất thiết lập và đăng nhập": "Finish setup and log in",
+ "Dán danh sách thiết bị trong BOQ vào đây...": "Paste the equipment list from the BOQ here...",
+ "Giao diện {fe} · Máy chủ {be}": "Interface {fe} · Backend {be}",
+ "Máy chủ chưa được cập nhật đúng phiên bản ({exp}). Hãy deploy lại Code.gs.": "The backend is not on the expected version ({exp}). Please redeploy Code.gs.",
+ "Phiên bản máy chủ": "Backend version",
+ "Nhà cung cấp email": "Email provider",
+ "Hạn mức email còn lại hôm nay": "Email quota left today",
+ "Không giới hạn kiểu Gmail": "No Gmail-style limit",
+ "Email đang chờ gửi lại": "Emails waiting to be retried",
+ "Sao lưu gần nhất": "Latest backup",
+ "Chưa có bản sao lưu": "No backup yet",
+ "Lần chạy nhắc nhở gần nhất": "Latest reminder run",
+ "Chưa chạy": "Not run yet",
+ "Trigger tự động": "Automatic triggers",
+ "Thiếu: {list}. Hãy chạy hàm setupDailyTrigger trong Apps Script.": "Missing: {list}. Please run the setupDailyTrigger function in Apps Script.",
+ "Đủ 3 trigger": "All 3 triggers present",
+ "Lỗi gần đây": "Recent errors",
+ "Đang sao lưu…": "Backing up…",
+ "Đã sao lưu: {name}": "Backed up: {name}",
+ "Đã gửi lại {n} email, còn {m} email trong hàng đợi.": "Resent {n} email(s), {m} left in the queue.",
+ "Xác thực 2 bước đang BẬT cho tài khoản của bạn.": "Two-step verification is ON for your account.",
+ "Hệ thống đang bắt buộc xác thực 2 bước cho Admin.": "Two-step verification is mandatory for Admins.",
+ "Nhập mã Authenticator hiện tại để tắt": "Enter the current Authenticator code to turn it off",
+ "Tắt xác thực 2 bước": "Turn off two-step verification",
+ "Xác thực 2 bước đang TẮT. Bật để Admin phải nhập thêm mã từ ứng dụng Authenticator khi đăng nhập.": "Two-step verification is OFF. Turn it on so that Admins must also enter a code from an Authenticator app when logging in.",
+ "Bật xác thực 2 bước": "Turn on two-step verification",
+ "Đã bật xác thực 2 bước.": "Two-step verification turned on.",
+ "Đã tắt xác thực 2 bước.": "Two-step verification turned off.",
+ "Tổng số dự án": "Total projects",
+ "Đang theo dõi": "Being tracked",
+ "Đã thắng (Won)": "Won",
+ "Tỷ lệ thắng": "Win rate",
+ "Giá trị pipeline (ước tính)": "Pipeline value (estimated)",
+ "Giá trị đã thắng (ước tính)": "Won value (estimated)",
+ "Chờ chốt CN (đã Won)": "Awaiting CN (Won)",
+ "Dự báo từ pipeline": "Forecast from pipeline",
+ "Vận hành": "Operations",
+ "Thời gian duyệt trung bình": "Average review time",
+ "giờ": "h",
+ "Quá hạn SLA ({h} giờ)": "Over SLA ({h} h)",
+ "Xung đột chờ xử lý": "Conflicts to resolve",
+ "Sắp hết bảo hộ (≤14 ngày)": "Protection ending soon (≤14 days)",
+ "Đã hết bảo hộ": "Protection expired",
+ "Chưa phân công": "Unassigned",
+ "Báo giá đã gửi": "Quotations sent",
+ "Tỷ lệ chấp nhận báo giá": "Quotation acceptance rate",
+ "Đang phụ trách": "Currently handling",
+ "Theo trạng thái": "By status",
+ "12 tháng gần nhất": "Last 12 months",
+ "đăng ký": "registered",
+ "thắng": "won",
+ "Theo ngành": "By industry",
+ "Đối tác hàng đầu": "Top partners",
+ "Thắng": "Won",
+ "Đăng ký": "Registered",
+ "Bảo hộ đến": "Protected until",
+ "Không có xung đột nào cần xử lý.": "No conflicts to resolve.",
+ "Trùng mã số thuế": "Same tax code",
+ "Tên khách hàng gần giống": "Very similar customer name",
+ "Đăng ký mới": "New registration",
+ "Dự án đã có": "Existing project",
+ "Ghi chú cho quyết định": "Note for the decision",
+ "Giữ cả hai": "Keep both",
+ "Từ chối dự án mới": "Reject the new project",
+ "Từ chối dự án cũ": "Reject the existing project",
+ "Xác nhận xử lý xung đột này?": "Confirm this conflict resolution?",
+ "Đã xử lý xung đột.": "Conflict resolved.",
+ "Thêm công ty đối tác": "Add a partner company",
+ "Tên công ty": "Company name",
+ "Hạng (để trống = tự đề xuất)": "Tier (leave blank = suggested automatically)",
+ "Thêm công ty": "Add company",
+ "Bảng điểm đối tác": "Partner scoreboard",
+ "Hạng": "Tier",
+ "Thành viên": "Members",
+ "Số dư MDF": "MDF balance",
+ "Chưa đăng ký công ty": "No company record",
+ "Ngừng": "Inactive",
+ "Đề xuất": "Suggested",
+ "đang mở": "open",
+ "chờ duyệt": "pending",
+ "Sửa": "Edit",
+ "Đã thêm công ty {id}. Đã gán {n} dự án cũ.": "Company {id} added. {n} existing project(s) linked.",
+ "Trạng thái": "Status",
+ "Đang hoạt động": "Active",
+ "Ghi chú": "Note",
+ "Gán thành viên trong tab Thiết lập → Phân quyền email.": "Assign members in Settings → Email roles.",
+ "Yêu cầu chờ duyệt": "Pending requests",
+ "Loại": "Type",
+ "Số tiền (VNĐ)": "Amount (VND)",
+ "Tham chiếu": "Reference",
+ "Ghi nhận": "Record",
+ "Duyệt": "Approve",
+ "Từ chối": "Reject",
+ "Đã ghi nhận.": "Recorded.",
+ "Đã xử lý yêu cầu.": "Request processed.",
+ "Chi tiết, bình luận, tài liệu": "Details, comments, documents",
+ "Chi tiết, bình luận, tài liệu, báo giá": "Details, comments, documents, quotations",
+ "Dòng thời gian": "Timeline",
+ "Bình luận": "Comments",
+ "Tài liệu": "Documents",
+ "Báo giá": "Quotations",
+ "Đơn hàng thực tế": "Actual order",
+ "Đang tải…": "Loading…",
+ "Chưa có bình luận nào.": "No comments yet.",
+ "Viết bình luận…": "Write a comment…",
+ "Gửi bình luận": "Send comment",
+ "Dung lượng": "Size",
+ "Người tải lên": "Uploaded by",
+ "Hiển thị cho": "Visible to",
+ "Chưa có tài liệu nào.": "No documents yet.",
+ "Cho phép: pdf, doc, docx, xls, xlsx, csv, ppt, pptx, png, jpg, txt, zip. Tối đa 8 MB mỗi file, 20 file mỗi dự án.": "Allowed: pdf, doc, docx, xls, xlsx, csv, ppt, pptx, png, jpg, txt, zip. Up to 8 MB per file, 20 files per project.",
+ "Tải lên": "Upload",
+ "Xoá tài liệu này?": "Delete this document?",
+ "Vui lòng chọn file.": "Please choose a file.",
+ "File quá lớn (tối đa 8 MB).": "File too large (max 8 MB).",
+ "Đang tải lên…": "Uploading…",
+ "Phương án": "Option",
+ "Hiệu lực (ngày)": "Validity (days)",
+ "Ghi chú cho đại lý (tuỳ chọn)": "Note for the partner (optional)",
+ "Gửi báo giá phiên bản mới": "Send a new quotation version",
+ "Hiệu lực đến": "Valid until",
+ "Chấp nhận bởi": "Accepted by",
+ "Tải PDF": "Download PDF",
+ "Tải Excel": "Download Excel",
+ "Chấp nhận báo giá": "Accept the quotation",
+ "Chưa có báo giá nào.": "No quotations yet.",
+ "Chấp nhận báo giá {no}?": "Accept quotation {no}?",
+ "Nhập PO và hoá đơn thực tế. CN sẽ tính trên số lượng thực tế này (và giá nhập thực tế nếu có), không phải số lượng đăng ký.": "Enter the actual PO and invoice. The CN will be calculated on these actual quantities (and the actual import price if given), not the registered quantities.",
+ "Số PO": "PO number",
+ "Ngày PO": "PO date",
+ "Số hoá đơn": "Invoice number",
+ "Ngày hoá đơn": "Invoice date",
+ "SL đăng ký": "Registered qty",
+ "SL thực tế": "Actual qty",
+ "Giá nhập thực tế (để trống = theo bảng giá)": "Actual import price (blank = price list)",
+ "Dự án đã lập CN, không thể sửa đơn hàng thực tế.": "A CN has been issued for this project, the actual order can no longer be edited.",
+ "Lưu đơn hàng thực tế": "Save actual order",
+ "Đã lưu đơn hàng thực tế.": "Actual order saved.",
+ "Tất cả dự án": "All projects",
+ "Của tôi": "Mine",
+ "Quá hạn SLA": "Over SLA",
+ "Có xung đột": "With conflicts",
+ "Chờ bổ sung thông tin": "Waiting for information",
+ "Sắp hết bảo hộ": "Protection ending soon",
+ "Yêu cầu gia hạn bảo hộ": "Protection extension requests",
+ "Phụ trách: {who}": "Assigned to: {who}",
+ "⏱ Quá hạn SLA ({h} giờ)": "⏱ Over SLA ({h} h)",
+ "🛡 Bảo hộ đến {d} (còn {n} ngày)": "🛡 Protected until {d} ({n} days left)",
+ "Hết bảo hộ ({d})": "Protection expired ({d})",
+ "⚠️ Xung đột với {id}": "⚠️ Conflict with {id}",
+ "Yêu cầu gia hạn bảo hộ: {note}": "Protection extension requested: {note}",
+ "Đang chờ đại lý bổ sung thông tin": "Waiting for the partner to add information",
+ "Người phụ trách": "Assignee",
+ "— Chưa phân công": "— Unassigned",
+ "🛡 Gia hạn bảo hộ": "🛡 Extend protection",
+ "Gia hạn bảo hộ dự án này thêm 90 ngày?": "Extend the protection of this project by 90 days?",
+ "Đã gửi yêu cầu gia hạn bảo hộ": "Extension request sent",
+ "EAVN cần bổ sung thông tin: {note}": "EAVN needs more information: {note}",
+ "Hãy chỉnh sửa dự án hoặc trả lời trong phần bình luận bên dưới.": "Please edit the project or reply in the comments below.",
+ "Dự án đang được EAVN xem xét do có đăng ký tương tự. EAVN sẽ liên hệ nếu cần thêm thông tin.": "EAVN is reviewing this project because a similar registration exists. EAVN will contact you if more information is needed.",
+ "🛡 Yêu cầu gia hạn bảo hộ": "🛡 Request protection extension",
+ "Ghi chú cho EAVN (ví dụ: tình trạng dự án)": "Note for EAVN (for example: project status)",
+ "Đã gửi yêu cầu gia hạn bảo hộ cho EAVN.": "Protection extension request sent to EAVN.",
+ "📄 Nhân bản": "📄 Duplicate",
+ "(bản sao)": "(copy)",
+ "Đã nhân bản từ {id}. Kiểm tra lại thông tin rồi gửi đăng ký.": "Duplicated from {id}. Check the details, then submit the registration.",
+ "Gửi yêu cầu chi MDF": "Send an MDF claim request",
+ "Đã gửi yêu cầu. EAVN sẽ xử lý và báo lại bằng email.": "Request sent. EAVN will process it and reply by email.",
+ "Vui lòng dán nội dung BOQ.": "Please paste the BOQ.",
+ "Bạn cần đồng ý gửi nội dung BOQ tới dịch vụ AI để dùng tính năng này.": "You need to agree to send the BOQ to the AI service to use this feature.",
+ "AI đang phân tích BOQ…": "The AI is analysing the BOQ…",
+ "Đây chỉ là gợi ý của AI. Hãy kiểm tra thông số trong datasheet trước khi đăng ký; các cảnh báo bên dưới cần được xem kỹ.": "These are only AI suggestions. Check the specifications in the datasheet before registering; read the warnings below carefully.",
+ "Dòng BOQ": "BOQ line",
+ "Độ tin cậy": "Confidence",
+ "Lý do và cảnh báo": "Reason and warnings",
+ "Không có model phù hợp": "No suitable model",
+ "Thêm các dòng đã chọn vào dự án": "Add the selected lines to the project",
+ "Đã thêm {n} dòng vào dự án. Hãy kiểm tra lại số lượng trước khi gửi đăng ký.": "{n} line(s) added to the project. Please check the quantities before submitting.",
+ "Có bản nháp chưa gửi (lưu lúc {time}).": "There is an unsent draft (saved at {time}).",
+ "Khôi phục": "Restore",
+ "Xoá bản nháp": "Discard draft",
+ "— Không thuộc công ty nào": "— No company",
+ "Bạn (hoặc công ty của bạn) đã đăng ký dự án cho khách hàng này: {id} (trạng thái: {st}). Hãy kiểm tra trước khi đăng ký thêm.": "You (or your company) already registered a project for this customer: {id} (status: {st}). Please check before registering another one.",
+ "Khách hàng này đã có dự án được đăng ký và đang được bảo hộ. Dự án của bạn vẫn được ghi nhận nhưng sẽ được EAVN xem xét kỹ; vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.": "This customer already has a registered, protected project. Your project will still be recorded but EAVN will review it carefully; please contact EAVN to confirm before continuing.",
+ "Đã có dự án cho khách hàng có tên tương tự. Dự án của bạn vẫn được ghi nhận nhưng sẽ được EAVN xem xét kỹ.": "A project already exists for a customer with a similar name. Your project will still be recorded but EAVN will review it carefully.",
+ "Hoá đơn": "Invoice",
+ "Cơ sở tính": "Basis",
+ "Thực tế": "Actual",
+ "Số lượng đăng ký": "Registered quantity",
+ "Các dự án chưa có đơn hàng thực tế: {ids}. Hãy nhập đơn hàng thực tế trong thẻ dự án (tab Quản trị), hoặc tick \"Cho phép chốt theo số lượng đăng ký\".": "Projects without an actual order: {ids}. Enter the actual order in the project card (Admin tab), or tick \"Allow closing on registered quantities\".",
+ "Phiên thiết lập đã hết hạn, vui lòng bắt đầu lại.": "The setup session has expired, please start again.",
+ "Mã Authenticator không đúng.": "Incorrect Authenticator code.",
+ "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.": "Your login session has expired, please log in again.",
+ "Quá nhiều lần nhập sai mã. Vui lòng đăng nhập lại.": "Too many wrong codes. Please log in again.",
+ "Quá nhiều lần nhập sai mã. Vui lòng thử lại sau 15 phút.": "Too many wrong codes. Please try again in 15 minutes.",
+ "Vui lòng đợi vài giây trước khi yêu cầu mã mới.": "Please wait a few seconds before requesting a new code.",
+ "Bạn yêu cầu mã quá nhiều lần, vui lòng thử lại sau ít phút.": "You requested codes too many times, please try again in a few minutes.",
+ "Hệ thống tạm hết hạn mức gửi email hôm nay, vui lòng thử lại sau.": "The system has temporarily run out of today's email quota, please try again later.",
+ "Vui lòng ghi rõ cần bổ sung thông tin gì (ô ghi chú).": "Please state what information is missing (note field).",
+ "Vui lòng nhập nội dung bình luận.": "Please enter the comment.",
+ "Người phụ trách phải là Admin.": "The assignee must be an Admin.",
+ "Chỉ nhập đơn hàng thực tế cho dự án đã Won.": "Actual orders can only be entered for Won projects.",
+ "Vui lòng nhập số PO hoặc số hoá đơn.": "Please enter a PO or invoice number.",
+ "Số lượng thực tế không hợp lệ.": "Invalid actual quantity.",
+ "Giá nhập thực tế không hợp lệ.": "Invalid actual import price.",
+ "Chưa có dòng sản phẩm thực tế nào.": "There are no actual product lines yet.",
+ "Không có xung đột nào cần xử lý cho dự án này.": "There is no conflict to resolve for this project.",
+ "Cách xử lý không hợp lệ.": "Invalid resolution.",
+ "Chỉ yêu cầu gia hạn cho dự án đã được duyệt (đang bảo hộ).": "Extensions can only be requested for approved (protected) projects.",
+ "Chỉ gia hạn bảo hộ cho dự án đã được duyệt.": "Protection can only be extended for approved projects.",
+ "Chưa có dòng nào có giá để báo giá.": "No line has a price yet, so there is nothing to quote.",
+ "Không tìm thấy báo giá.": "Quotation not found.",
+ "Báo giá đã hết hiệu lực. Vui lòng liên hệ EAVN để nhận báo giá mới.": "The quotation has expired. Please contact EAVN for a new one.",
+ "Đã có phiên bản báo giá mới hơn, vui lòng chấp nhận phiên bản mới nhất.": "A newer quotation version exists, please accept the latest one.",
+ "Báo giá này đã được chấp nhận.": "This quotation has already been accepted.",
+ "Định dạng file không được hỗ trợ (cho phép: ": "Unsupported file type (allowed: ",
+ "File rỗng.": "The file is empty.",
+ "File quá lớn. Kích thước tối đa: ": "File too large. Maximum size: ",
+ "Mỗi dự án tối đa 20 tài liệu.": "A maximum of 20 documents per project.",
+ "Không tìm thấy tài liệu.": "Document not found.",
+ "Vui lòng nhập tên công ty.": "Please enter the company name.",
+ "Hạng đối tác không hợp lệ.": "Invalid partner tier.",
+ "Tên công ty đã tồn tại.": "This company name already exists.",
+ "Không tìm thấy công ty.": "Company not found.",
+ "Loại giao dịch MDF không hợp lệ.": "Invalid MDF transaction type.",
+ "Số tiền MDF không hợp lệ.": "Invalid MDF amount.",
+ "Vượt quá số dư MDF.": "This exceeds the MDF balance.",
+ "Tài khoản chưa được gắn với công ty đối tác. Vui lòng liên hệ EAVN.": "Your account is not linked to a partner company. Please contact EAVN.",
+ "Quyết định không hợp lệ.": "Invalid decision.",
+ "Không tìm thấy yêu cầu MDF đang chờ.": "No pending MDF request found.",
+ "Không có quyền truy cập hoặc phiên hết hạn.": "No access or the session has expired.",
+ "Trợ lý AI chưa được cấu hình. Vui lòng liên hệ EAVN.": "The AI assistant is not configured. Please contact EAVN.",
+ "BOQ quá dài. Số ký tự tối đa: ": "The BOQ is too long. Maximum characters: ",
+ "Bạn đã dùng hết lượt gợi ý trong giờ này, vui lòng thử lại sau.": "You have used all suggestions for this hour, please try again later.",
+ "Hệ thống đã đạt giới hạn gợi ý AI trong ngày.": "The system has reached today's AI suggestion limit.",
+ "Không kết nối được dịch vụ AI, vui lòng thử lại sau.": "Could not reach the AI service, please try again later.",
+ "Dịch vụ AI đang bận, vui lòng thử lại sau.": "The AI service is busy, please try again later.",
+ "Dịch vụ AI trả về lỗi, vui lòng thử lại sau.": "The AI service returned an error, please try again later.",
+ "AI không trả về gợi ý hợp lệ. Hãy kiểm tra lại nội dung BOQ.": "The AI returned no valid suggestions. Please check the BOQ content.",
+ "Các dự án chưa có đơn hàng thực tế (PO/hoá đơn): ": "Projects without an actual order (PO/invoice): "
 },
  zh: {
  "Đăng ký dự án & theo dõi phê duyệt — xin chào": "项目报备与审批跟踪 — 您好",
@@ -935,14 +1272,275 @@ const DICT = {
  "Tải bảng giá bán": "上传销售价格表",
  "Chưa có dữ liệu bảng giá để lưu.": "没有可保存的价格表数据。",
  "Tối đa 12 cột giá.": "最多 12 个价格列。",
- "Không tìm thấy cột giá này.": "未找到该价格列。"
+ "Không tìm thấy cột giá này.": "未找到该价格列。",
+ "Tổng quan": "总览",
+ "Xung đột": "冲突",
+ "Trợ lý BOQ (AI)": "BOQ 助手（AI）",
+ "Dán BOQ của khách (hoặc tải file Excel/CSV), AI sẽ gợi ý model Aurcore tương đương. Đây chỉ là gợi ý: hãy kiểm tra thông số trước khi đăng ký.": "粘贴客户的 BOQ（或上传 Excel/CSV 文件），AI 会推荐对应的 Aurcore 型号。这只是建议：报备前请核对规格。",
+ "Tôi đồng ý gửi nội dung BOQ này tới dịch vụ AI (Anthropic) để lấy gợi ý. Tôi sẽ không đưa thông tin cá nhân hoặc bí mật không cần thiết vào BOQ.": "我同意将此 BOQ 发送给 AI 服务（Anthropic）以获取建议。我不会在 BOQ 中放入个人信息或不必要的机密信息。",
+ "Gợi ý model": "推荐型号",
+ "Các đăng ký có thể trùng với dự án đã có (cùng mã số thuế gốc hoặc tên khách hàng gần giống). Xem hai bên cạnh nhau rồi quyết định.": "可能与已有项目重叠的报备（相同的税号主体或非常相似的客户名称）。请并排对比后决定。",
+ "Sức khoẻ hệ thống": "系统健康状态",
+ "Phiên bản máy chủ, hạn mức email, hàng đợi gửi lại, sao lưu và các trigger tự động. Hệ thống tự sao lưu Sheet mỗi đêm và tự gửi lại email bị lỗi.": "服务器版本、邮件额度、重发队列、备份及自动触发器。系统每晚自动备份 Sheet，并自动重发失败的邮件。",
+ "Sao lưu ngay": "立即备份",
+ "Gửi lại email đang chờ": "重发排队中的邮件",
+ "Bảo mật tài khoản (xác thực 2 bước)": "账户安全（两步验证）",
+ "Thêm khoá dưới đây vào ứng dụng Authenticator (chọn \"Nhập khoá thiết lập\"), rồi nhập mã 6 số để xác nhận.": "将下方密钥添加到 Authenticator 应用（选择“输入设置密钥”），然后输入 6 位验证码确认。",
+ "Mở trong ứng dụng Authenticator": "在 Authenticator 应用中打开",
+ "Mã 6 số": "6 位验证码",
+ "Xác nhận và bật": "确认并启用",
+ "Công ty đối tác": "合作伙伴公司",
+ "Cho phép chốt theo số lượng đăng ký (dự án chưa có đơn hàng thực tế)": "允许按报备数量结算（尚无实际订单的项目）",
+ "Tài khoản Admin có bật xác thực 2 bước. Nhập mã 6 số từ ứng dụng Authenticator (Google Authenticator, Microsoft Authenticator...) của bạn.": "该 Admin 账户已启用两步验证。请输入 Authenticator 应用（Google Authenticator、Microsoft Authenticator 等）中的 6 位验证码。",
+ "Mã Authenticator": "Authenticator 验证码",
+ "Hệ thống bắt buộc xác thực 2 bước cho Admin. Thêm khoá dưới đây vào ứng dụng Authenticator (chọn \"Nhập khoá thiết lập\"), rồi nhập mã 6 số mà ứng dụng hiển thị.": "系统要求 Admin 必须启用两步验证。请将下方密钥添加到 Authenticator 应用（选择“输入设置密钥”），然后输入应用显示的 6 位验证码。",
+ "Hoàn tất thiết lập và đăng nhập": "完成设置并登录",
+ "Dán danh sách thiết bị trong BOQ vào đây...": "将 BOQ 中的设备清单粘贴到这里...",
+ "Giao diện {fe} · Máy chủ {be}": "界面 {fe} · 服务器 {be}",
+ "Máy chủ chưa được cập nhật đúng phiên bản ({exp}). Hãy deploy lại Code.gs.": "服务器未更新到预期版本（{exp}）。请重新部署 Code.gs。",
+ "Phiên bản máy chủ": "服务器版本",
+ "Nhà cung cấp email": "邮件服务商",
+ "Hạn mức email còn lại hôm nay": "今日剩余邮件额度",
+ "Không giới hạn kiểu Gmail": "无 Gmail 式限额",
+ "Email đang chờ gửi lại": "等待重发的邮件",
+ "Sao lưu gần nhất": "最近一次备份",
+ "Chưa có bản sao lưu": "尚无备份",
+ "Lần chạy nhắc nhở gần nhất": "最近一次提醒运行",
+ "Chưa chạy": "尚未运行",
+ "Trigger tự động": "自动触发器",
+ "Thiếu: {list}. Hãy chạy hàm setupDailyTrigger trong Apps Script.": "缺少：{list}。请在 Apps Script 中运行 setupDailyTrigger 函数。",
+ "Đủ 3 trigger": "3 个触发器齐全",
+ "Lỗi gần đây": "最近错误",
+ "Đang sao lưu…": "正在备份…",
+ "Đã sao lưu: {name}": "已备份：{name}",
+ "Đã gửi lại {n} email, còn {m} email trong hàng đợi.": "已重发 {n} 封邮件，队列中还剩 {m} 封。",
+ "Xác thực 2 bước đang BẬT cho tài khoản của bạn.": "您的账户已启用两步验证。",
+ "Hệ thống đang bắt buộc xác thực 2 bước cho Admin.": "系统要求 Admin 必须启用两步验证。",
+ "Nhập mã Authenticator hiện tại để tắt": "输入当前 Authenticator 验证码以关闭",
+ "Tắt xác thực 2 bước": "关闭两步验证",
+ "Xác thực 2 bước đang TẮT. Bật để Admin phải nhập thêm mã từ ứng dụng Authenticator khi đăng nhập.": "两步验证当前已关闭。启用后，Admin 登录时还需输入 Authenticator 应用中的验证码。",
+ "Bật xác thực 2 bước": "启用两步验证",
+ "Đã bật xác thực 2 bước.": "已启用两步验证。",
+ "Đã tắt xác thực 2 bước.": "已关闭两步验证。",
+ "Tổng số dự án": "项目总数",
+ "Đang theo dõi": "跟进中",
+ "Đã thắng (Won)": "已赢单",
+ "Tỷ lệ thắng": "赢单率",
+ "Giá trị pipeline (ước tính)": "项目池金额（预计）",
+ "Giá trị đã thắng (ước tính)": "赢单金额（预计）",
+ "Chờ chốt CN (đã Won)": "待开具 CN（已赢单）",
+ "Dự báo từ pipeline": "项目池预测",
+ "Vận hành": "运营",
+ "Thời gian duyệt trung bình": "平均审核时间",
+ "giờ": "小时",
+ "Quá hạn SLA ({h} giờ)": "超出 SLA（{h} 小时）",
+ "Xung đột chờ xử lý": "待处理冲突",
+ "Sắp hết bảo hộ (≤14 ngày)": "保护期即将结束（≤14 天）",
+ "Đã hết bảo hộ": "保护期已结束",
+ "Chưa phân công": "未分配",
+ "Báo giá đã gửi": "已发送报价",
+ "Tỷ lệ chấp nhận báo giá": "报价接受率",
+ "Đang phụ trách": "当前负责",
+ "Theo trạng thái": "按状态",
+ "12 tháng gần nhất": "最近 12 个月",
+ "đăng ký": "报备",
+ "thắng": "赢单",
+ "Theo ngành": "按行业",
+ "Đối tác hàng đầu": "重点合作伙伴",
+ "Thắng": "赢单",
+ "Đăng ký": "报备",
+ "Bảo hộ đến": "保护期至",
+ "Không có xung đột nào cần xử lý.": "没有需要处理的冲突。",
+ "Trùng mã số thuế": "税号相同",
+ "Tên khách hàng gần giống": "客户名称非常相似",
+ "Đăng ký mới": "新报备",
+ "Dự án đã có": "已有项目",
+ "Ghi chú cho quyết định": "决定备注",
+ "Giữ cả hai": "两者都保留",
+ "Từ chối dự án mới": "拒绝新项目",
+ "Từ chối dự án cũ": "拒绝已有项目",
+ "Xác nhận xử lý xung đột này?": "确认处理该冲突？",
+ "Đã xử lý xung đột.": "冲突已处理。",
+ "Thêm công ty đối tác": "添加合作伙伴公司",
+ "Tên công ty": "公司名称",
+ "Hạng (để trống = tự đề xuất)": "等级（留空 = 自动建议）",
+ "Thêm công ty": "添加公司",
+ "Bảng điểm đối tác": "合作伙伴评分表",
+ "Hạng": "等级",
+ "Thành viên": "成员",
+ "Số dư MDF": "MDF 余额",
+ "Chưa đăng ký công ty": "未登记公司",
+ "Ngừng": "停用",
+ "Đề xuất": "建议",
+ "đang mở": "进行中",
+ "chờ duyệt": "待审批",
+ "Sửa": "编辑",
+ "Đã thêm công ty {id}. Đã gán {n} dự án cũ.": "已添加公司 {id}，并关联 {n} 个已有项目。",
+ "Trạng thái": "状态",
+ "Đang hoạt động": "启用",
+ "Ghi chú": "备注",
+ "Gán thành viên trong tab Thiết lập → Phân quyền email.": "请在“设置 → 邮箱权限”中分配成员。",
+ "Yêu cầu chờ duyệt": "待审批申请",
+ "Loại": "类型",
+ "Số tiền (VNĐ)": "金额（越南盾）",
+ "Tham chiếu": "参考",
+ "Ghi nhận": "记录",
+ "Duyệt": "批准",
+ "Từ chối": "拒绝",
+ "Đã ghi nhận.": "已记录。",
+ "Đã xử lý yêu cầu.": "申请已处理。",
+ "Chi tiết, bình luận, tài liệu": "详情、评论、文档",
+ "Chi tiết, bình luận, tài liệu, báo giá": "详情、评论、文档、报价",
+ "Dòng thời gian": "时间线",
+ "Bình luận": "评论",
+ "Tài liệu": "文档",
+ "Báo giá": "报价",
+ "Đơn hàng thực tế": "实际订单",
+ "Đang tải…": "加载中…",
+ "Chưa có bình luận nào.": "暂无评论。",
+ "Viết bình luận…": "写评论…",
+ "Gửi bình luận": "发送评论",
+ "Dung lượng": "大小",
+ "Người tải lên": "上传人",
+ "Hiển thị cho": "可见对象",
+ "Chưa có tài liệu nào.": "暂无文档。",
+ "Cho phép: pdf, doc, docx, xls, xlsx, csv, ppt, pptx, png, jpg, txt, zip. Tối đa 8 MB mỗi file, 20 file mỗi dự án.": "允许：pdf、doc、docx、xls、xlsx、csv、ppt、pptx、png、jpg、txt、zip。每个文件最大 8 MB，每个项目最多 20 个文件。",
+ "Tải lên": "上传",
+ "Xoá tài liệu này?": "删除此文档？",
+ "Vui lòng chọn file.": "请选择文件。",
+ "File quá lớn (tối đa 8 MB).": "文件过大（最大 8 MB）。",
+ "Đang tải lên…": "正在上传…",
+ "Phương án": "方案",
+ "Hiệu lực (ngày)": "有效期（天）",
+ "Ghi chú cho đại lý (tuỳ chọn)": "给经销商的备注（可选）",
+ "Gửi báo giá phiên bản mới": "发送新版本报价",
+ "Hiệu lực đến": "有效期至",
+ "Chấp nhận bởi": "接受人",
+ "Tải PDF": "下载 PDF",
+ "Tải Excel": "下载 Excel",
+ "Chấp nhận báo giá": "接受报价",
+ "Chưa có báo giá nào.": "暂无报价。",
+ "Chấp nhận báo giá {no}?": "接受报价 {no}？",
+ "Nhập PO và hoá đơn thực tế. CN sẽ tính trên số lượng thực tế này (và giá nhập thực tế nếu có), không phải số lượng đăng ký.": "请输入实际 PO 和发票。CN 将按此实际数量（若填写则按实际进口价）计算，而不是报备数量。",
+ "Số PO": "PO 编号",
+ "Ngày PO": "PO 日期",
+ "Số hoá đơn": "发票编号",
+ "Ngày hoá đơn": "发票日期",
+ "SL đăng ký": "报备数量",
+ "SL thực tế": "实际数量",
+ "Giá nhập thực tế (để trống = theo bảng giá)": "实际进口价（留空 = 按价格表）",
+ "Dự án đã lập CN, không thể sửa đơn hàng thực tế.": "该项目已开具 CN，无法再修改实际订单。",
+ "Lưu đơn hàng thực tế": "保存实际订单",
+ "Đã lưu đơn hàng thực tế.": "实际订单已保存。",
+ "Tất cả dự án": "所有项目",
+ "Của tôi": "我的",
+ "Quá hạn SLA": "超出 SLA",
+ "Có xung đột": "有冲突",
+ "Chờ bổ sung thông tin": "待补充信息",
+ "Sắp hết bảo hộ": "保护期即将结束",
+ "Yêu cầu gia hạn bảo hộ": "保护期延长申请",
+ "Phụ trách: {who}": "负责人：{who}",
+ "⏱ Quá hạn SLA ({h} giờ)": "⏱ 超出 SLA（{h} 小时）",
+ "🛡 Bảo hộ đến {d} (còn {n} ngày)": "🛡 保护期至 {d}（剩余 {n} 天）",
+ "Hết bảo hộ ({d})": "保护期已结束（{d}）",
+ "⚠️ Xung đột với {id}": "⚠️ 与 {id} 冲突",
+ "Yêu cầu gia hạn bảo hộ: {note}": "保护期延长申请：{note}",
+ "Đang chờ đại lý bổ sung thông tin": "等待经销商补充信息",
+ "Người phụ trách": "负责人",
+ "— Chưa phân công": "— 未分配",
+ "🛡 Gia hạn bảo hộ": "🛡 延长保护期",
+ "Gia hạn bảo hộ dự án này thêm 90 ngày?": "将该项目保护期延长 90 天？",
+ "Đã gửi yêu cầu gia hạn bảo hộ": "已提交延长申请",
+ "EAVN cần bổ sung thông tin: {note}": "EAVN 需要补充信息：{note}",
+ "Hãy chỉnh sửa dự án hoặc trả lời trong phần bình luận bên dưới.": "请编辑项目，或在下方评论中回复。",
+ "Dự án đang được EAVN xem xét do có đăng ký tương tự. EAVN sẽ liên hệ nếu cần thêm thông tin.": "由于存在类似报备，EAVN 正在审核该项目。如需更多信息，EAVN 会联系您。",
+ "🛡 Yêu cầu gia hạn bảo hộ": "🛡 申请延长保护期",
+ "Ghi chú cho EAVN (ví dụ: tình trạng dự án)": "给 EAVN 的备注（例如：项目进展）",
+ "Đã gửi yêu cầu gia hạn bảo hộ cho EAVN.": "已向 EAVN 提交保护期延长申请。",
+ "📄 Nhân bản": "📄 复制",
+ "(bản sao)": "（副本）",
+ "Đã nhân bản từ {id}. Kiểm tra lại thông tin rồi gửi đăng ký.": "已从 {id} 复制。请核对信息后提交报备。",
+ "Gửi yêu cầu chi MDF": "提交 MDF 使用申请",
+ "Đã gửi yêu cầu. EAVN sẽ xử lý và báo lại bằng email.": "申请已提交。EAVN 处理后会通过邮件通知您。",
+ "Vui lòng dán nội dung BOQ.": "请粘贴 BOQ 内容。",
+ "Bạn cần đồng ý gửi nội dung BOQ tới dịch vụ AI để dùng tính năng này.": "使用此功能需要同意将 BOQ 内容发送给 AI 服务。",
+ "AI đang phân tích BOQ…": "AI 正在分析 BOQ…",
+ "Đây chỉ là gợi ý của AI. Hãy kiểm tra thông số trong datasheet trước khi đăng ký; các cảnh báo bên dưới cần được xem kỹ.": "这些只是 AI 的建议。报备前请对照数据手册核对规格；请仔细阅读下方警告。",
+ "Dòng BOQ": "BOQ 行",
+ "Độ tin cậy": "可信度",
+ "Lý do và cảnh báo": "理由与警告",
+ "Không có model phù hợp": "没有合适的型号",
+ "Thêm các dòng đã chọn vào dự án": "将所选行添加到项目",
+ "Đã thêm {n} dòng vào dự án. Hãy kiểm tra lại số lượng trước khi gửi đăng ký.": "已向项目添加 {n} 行。提交前请核对数量。",
+ "Có bản nháp chưa gửi (lưu lúc {time}).": "有一份未提交的草稿（保存于 {time}）。",
+ "Khôi phục": "恢复",
+ "Xoá bản nháp": "删除草稿",
+ "— Không thuộc công ty nào": "— 不属于任何公司",
+ "Bạn (hoặc công ty của bạn) đã đăng ký dự án cho khách hàng này: {id} (trạng thái: {st}). Hãy kiểm tra trước khi đăng ký thêm.": "您（或您的公司）已为该客户报备过项目：{id}（状态：{st}）。再次报备前请先核对。",
+ "Khách hàng này đã có dự án được đăng ký và đang được bảo hộ. Dự án của bạn vẫn được ghi nhận nhưng sẽ được EAVN xem xét kỹ; vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.": "该客户已有处于保护期的报备项目。您的项目仍会被记录，但 EAVN 将仔细审核；继续之前请联系 EAVN 确认。",
+ "Đã có dự án cho khách hàng có tên tương tự. Dự án của bạn vẫn được ghi nhận nhưng sẽ được EAVN xem xét kỹ.": "已存在名称相似客户的项目。您的项目仍会被记录，但 EAVN 将仔细审核。",
+ "Hoá đơn": "发票",
+ "Cơ sở tính": "计算依据",
+ "Thực tế": "实际",
+ "Số lượng đăng ký": "报备数量",
+ "Các dự án chưa có đơn hàng thực tế: {ids}. Hãy nhập đơn hàng thực tế trong thẻ dự án (tab Quản trị), hoặc tick \"Cho phép chốt theo số lượng đăng ký\".": "以下项目尚无实际订单：{ids}。请在项目卡片（管理标签）中录入实际订单，或勾选“允许按报备数量结算”。",
+ "Phiên thiết lập đã hết hạn, vui lòng bắt đầu lại.": "设置会话已过期，请重新开始。",
+ "Mã Authenticator không đúng.": "Authenticator 验证码不正确。",
+ "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.": "登录会话已过期，请重新登录。",
+ "Quá nhiều lần nhập sai mã. Vui lòng đăng nhập lại.": "验证码错误次数过多，请重新登录。",
+ "Quá nhiều lần nhập sai mã. Vui lòng thử lại sau 15 phút.": "验证码错误次数过多，请 15 分钟后再试。",
+ "Vui lòng đợi vài giây trước khi yêu cầu mã mới.": "请稍等几秒后再申请新的验证码。",
+ "Bạn yêu cầu mã quá nhiều lần, vui lòng thử lại sau ít phút.": "您申请验证码的次数过多，请几分钟后再试。",
+ "Hệ thống tạm hết hạn mức gửi email hôm nay, vui lòng thử lại sau.": "系统今日邮件发送额度暂时用完，请稍后再试。",
+ "Vui lòng ghi rõ cần bổ sung thông tin gì (ô ghi chú).": "请说明需要补充什么信息（备注栏）。",
+ "Vui lòng nhập nội dung bình luận.": "请输入评论内容。",
+ "Người phụ trách phải là Admin.": "负责人必须是 Admin。",
+ "Chỉ nhập đơn hàng thực tế cho dự án đã Won.": "只能为已赢单的项目录入实际订单。",
+ "Vui lòng nhập số PO hoặc số hoá đơn.": "请输入 PO 编号或发票编号。",
+ "Số lượng thực tế không hợp lệ.": "实际数量无效。",
+ "Giá nhập thực tế không hợp lệ.": "实际进口价无效。",
+ "Chưa có dòng sản phẩm thực tế nào.": "尚无实际产品行。",
+ "Không có xung đột nào cần xử lý cho dự án này.": "该项目没有需要处理的冲突。",
+ "Cách xử lý không hợp lệ.": "处理方式无效。",
+ "Chỉ yêu cầu gia hạn cho dự án đã được duyệt (đang bảo hộ).": "只能为已批准（保护期内）的项目申请延长。",
+ "Chỉ gia hạn bảo hộ cho dự án đã được duyệt.": "只能为已批准的项目延长保护期。",
+ "Chưa có dòng nào có giá để báo giá.": "尚无带价格的行，无法报价。",
+ "Không tìm thấy báo giá.": "未找到报价。",
+ "Báo giá đã hết hiệu lực. Vui lòng liên hệ EAVN để nhận báo giá mới.": "报价已过期，请联系 EAVN 获取新报价。",
+ "Đã có phiên bản báo giá mới hơn, vui lòng chấp nhận phiên bản mới nhất.": "已有更新版本的报价，请接受最新版本。",
+ "Báo giá này đã được chấp nhận.": "该报价已被接受。",
+ "Định dạng file không được hỗ trợ (cho phép: ": "不支持的文件类型（允许：",
+ "File rỗng.": "文件为空。",
+ "File quá lớn. Kích thước tối đa: ": "文件过大。最大大小：",
+ "Mỗi dự án tối đa 20 tài liệu.": "每个项目最多 20 个文档。",
+ "Không tìm thấy tài liệu.": "未找到文档。",
+ "Vui lòng nhập tên công ty.": "请输入公司名称。",
+ "Hạng đối tác không hợp lệ.": "合作伙伴等级无效。",
+ "Tên công ty đã tồn tại.": "公司名称已存在。",
+ "Không tìm thấy công ty.": "未找到公司。",
+ "Loại giao dịch MDF không hợp lệ.": "MDF 交易类型无效。",
+ "Số tiền MDF không hợp lệ.": "MDF 金额无效。",
+ "Vượt quá số dư MDF.": "超出 MDF 余额。",
+ "Tài khoản chưa được gắn với công ty đối tác. Vui lòng liên hệ EAVN.": "您的账户尚未关联合作伙伴公司，请联系 EAVN。",
+ "Quyết định không hợp lệ.": "决定无效。",
+ "Không tìm thấy yêu cầu MDF đang chờ.": "未找到待处理的 MDF 申请。",
+ "Không có quyền truy cập hoặc phiên hết hạn.": "无访问权限或会话已过期。",
+ "Trợ lý AI chưa được cấu hình. Vui lòng liên hệ EAVN.": "AI 助手尚未配置，请联系 EAVN。",
+ "BOQ quá dài. Số ký tự tối đa: ": "BOQ 过长。最大字符数：",
+ "Bạn đã dùng hết lượt gợi ý trong giờ này, vui lòng thử lại sau.": "您本小时的建议次数已用完，请稍后再试。",
+ "Hệ thống đã đạt giới hạn gợi ý AI trong ngày.": "系统已达到今日 AI 建议次数上限。",
+ "Không kết nối được dịch vụ AI, vui lòng thử lại sau.": "无法连接 AI 服务，请稍后再试。",
+ "Dịch vụ AI đang bận, vui lòng thử lại sau.": "AI 服务繁忙，请稍后再试。",
+ "Dịch vụ AI trả về lỗi, vui lòng thử lại sau.": "AI 服务返回错误，请稍后再试。",
+ "AI không trả về gợi ý hợp lệ. Hãy kiểm tra lại nội dung BOQ.": "AI 未返回有效建议，请检查 BOQ 内容。",
+ "Các dự án chưa có đơn hàng thực tế (PO/hoá đơn): ": "以下项目尚无实际订单（PO/发票）："
 }
 };
 
 const STATUS_LABEL = {
-  vi:{Submitted:'Đã gửi', UnderReview:'Đang xét duyệt', Approved:'Đã duyệt', Rejected:'Từ chối', Won:'Đã thắng (Won)', Lost:'Thất bại (Lost)'},
-  en:{Submitted:'Submitted', UnderReview:'Under review', Approved:'Approved', Rejected:'Rejected', Won:'Won', Lost:'Lost'},
-  zh:{Submitted:'已提交', UnderReview:'审核中', Approved:'已批准', Rejected:'已拒绝', Won:'赢单', Lost:'丢单'}
+  vi:{Submitted:'Đã gửi', UnderReview:'Đang xét duyệt', NeedInfo:'Cần bổ sung thông tin', Approved:'Đã duyệt', Rejected:'Từ chối', Won:'Đã thắng (Won)', Lost:'Thất bại (Lost)'},
+  en:{Submitted:'Submitted', UnderReview:'Under review', NeedInfo:'More info needed', Approved:'Approved', Rejected:'Rejected', Won:'Won', Lost:'Lost'},
+  zh:{Submitted:'已提交', UnderReview:'审核中', NeedInfo:'需补充信息', Approved:'已批准', Rejected:'已拒绝', Won:'赢单', Lost:'丢单'}
 };
 function statusLabel(st){ return (STATUS_LABEL[LANG] || STATUS_LABEL.vi)[st] || st; }
 
@@ -1047,6 +1645,675 @@ function showConfigWarningIfNeeded(){
   w.id = 'cfgWarn';
   w.textContent = t('⚠️ Chưa dán Web App URL vào CONFIG.API_URL trong file HTML — form sẽ không hoạt động cho tới khi cấu hình xong.');
   document.body.appendChild(w);
+}
+
+// ====== ĐĂNG NHẬP 2 BƯỚC (Admin), PHIÊN BẢN, SỨC KHOẺ HỆ THỐNG, BẢO MẬT TÀI KHOẢN ======
+const FRONTEND_VERSION = 'v29', EXPECTED_BACKEND = 'v29-ai-boq';
+let backendVersion = '', loginTicket = null, companiesRows = [];
+
+function H(html){ const d = document.createElement('div'); d.innerHTML = String(html).trim(); return d.firstElementChild; }
+function apiA(p){ return api(Object.assign({email:session.email, token:session.token}, p)); }
+function fmtBytes(n){ return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+function downloadB64(name, b64, mime){ const a = document.createElement('a'); a.href = 'data:' + (mime || 'application/octet-stream') + ';base64,' + b64; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+function shortDate(s){ return String(s || '').slice(0, 10); }
+
+function completeLogin(r){
+  session = {email:pendingEmail, token:r.token, role:r.role, name:r.name};
+  sessionStorage.setItem('pbs_session', JSON.stringify(session));
+  enterApp(pendingIntent);
+}
+function showLoginStep(id){
+  ['stepEmail','stepOtp','stepTotp','stepEnroll'].forEach(x=>{ document.getElementById(x).style.display = x === id ? '' : 'none'; });
+}
+function showTotpStep(ticket){
+  loginTicket = ticket; showLoginStep('stepTotp'); document.getElementById('totpCode').value = '';
+  document.getElementById('loginMsg').innerHTML = '';
+}
+function showEnrollStep(r){
+  loginTicket = r.ticket; showLoginStep('stepEnroll'); document.getElementById('enrollCode').value = '';
+  document.getElementById('enrollSecret').textContent = r.secret;
+  document.getElementById('enrollUri').href = r.uri;
+  document.getElementById('loginMsg').innerHTML = '';
+}
+async function verifyTotpLogin(){
+  const code = document.getElementById('totpCode').value.trim(), msg = document.getElementById('loginMsg');
+  if (!code){ msg.innerHTML = '<div class="msg bad">' + esc(t('Vui lòng nhập mã xác thực.')) + '</div>'; return; }
+  try{
+    const r = await api({action:'verifyTotp', ticket:loginTicket, code:code});
+    if (r.ok) completeLogin(r); else msg.innerHTML = '<div class="msg bad">' + esc(te(r.error) || t('Mã không đúng.')) + '</div>';
+  }catch(e){ msg.innerHTML = '<div class="msg bad">' + esc(t('Lỗi kết nối tới hệ thống.')) + '</div>'; }
+}
+async function enrollLogin(){
+  const code = document.getElementById('enrollCode').value.trim(), msg = document.getElementById('loginMsg');
+  if (!code){ msg.innerHTML = '<div class="msg bad">' + esc(t('Vui lòng nhập mã xác thực.')) + '</div>'; return; }
+  try{
+    const r = await api({action:'totpEnrollLogin', ticket:loginTicket, code:code});
+    if (r.ok) completeLogin(r); else msg.innerHTML = '<div class="msg bad">' + esc(te(r.error) || t('Mã không đúng.')) + '</div>';
+  }catch(e){ msg.innerHTML = '<div class="msg bad">' + esc(t('Lỗi kết nối tới hệ thống.')) + '</div>'; }
+}
+
+async function pingBackend(){
+  try{ const r = await api({action:'ping'}); if (r && r.version) backendVersion = r.version; }catch(e){}
+  updateVerFooter();
+}
+function updateVerFooter(){
+  const el = document.getElementById('verFooter'); if (!el) return;
+  const mismatch = backendVersion && backendVersion !== EXPECTED_BACKEND;
+  el.textContent = t('Giao diện {fe} · Máy chủ {be}', {fe: FRONTEND_VERSION, be: backendVersion || '?'}) + (mismatch ? ' — ' + t('Máy chủ chưa được cập nhật đúng phiên bản ({exp}). Hãy deploy lại Code.gs.', {exp: EXPECTED_BACKEND}) : '');
+  el.style.color = mismatch ? 'var(--bad)' : '';
+  const b = document.getElementById('verBanner');
+  if (b) b.innerHTML = (mismatch && session && session.role === 'Admin') ? '<div class="msg bad">⚠️ ' + esc(t('Máy chủ chưa được cập nhật đúng phiên bản ({exp}). Hãy deploy lại Code.gs.', {exp: EXPECTED_BACKEND})) + ' (' + esc(backendVersion) + ')</div>' : '';
+}
+
+// ---- Sức khoẻ hệ thống (tab Thiết lập) ----
+async function loadHealth(){
+  const box = document.getElementById('healthBox');
+  try{
+    const r = await apiA({action:'systemStatus'});
+    if (!r.ok){ box.innerHTML = '<div class="msg bad">' + esc(te(r.error) || t('Lỗi kết nối.')) + '</div>'; return; }
+    backendVersion = r.version; updateVerFooter();
+    const rows = [];
+    rows.push([t('Phiên bản máy chủ'), r.version + (r.version !== EXPECTED_BACKEND ? ' ⚠️' : ' ✓')]);
+    rows.push([t('Nhà cung cấp email'), r.provider === 'MAILGUN' ? 'Mailgun' : 'Gmail (Apps Script)']);
+    rows.push([t('Hạn mức email còn lại hôm nay'), r.quota === null ? t('Không giới hạn kiểu Gmail') : (r.quota + (r.quota < 20 ? ' ⚠️' : ''))]);
+    rows.push([t('Email đang chờ gửi lại'), String(r.queue) + (r.queue ? ' ⚠️' : '')]);
+    rows.push([t('Sao lưu gần nhất'), r.lastBackup ? (r.lastBackup.time.slice(0, 16).replace('T', ' ') + ' · ' + r.lastBackup.name) : t('Chưa có bản sao lưu')]);
+    rows.push([t('Lần chạy nhắc nhở gần nhất'), r.lastReminders || t('Chưa chạy')]);
+    const need = ['sendCloseDateReminders','dailyMaintenance','queueTrigger'], missing = need.filter(x=>r.triggers.indexOf(x) < 0);
+    rows.push([t('Trigger tự động'), missing.length ? t('Thiếu: {list}. Hãy chạy hàm setupDailyTrigger trong Apps Script.', {list: missing.join(', ')}) + ' ⚠️' : t('Đủ 3 trigger') + ' ✓']);
+    box.innerHTML = '<table class="lines-table">' + rows.map(x=>'<tr><td><b>' + esc(x[0]) + '</b></td><td>' + esc(x[1]) + '</td></tr>').join('') + '</table>' +
+      (r.errors.length ? '<div class="hint" style="margin-top:8px;"><b>' + esc(t('Lỗi gần đây')) + ':</b><br>' + r.errors.map(e=>esc(e.Time + ' · ' + e.Where + ' · ' + e.Detail)).join('<br>') + '</div>' : '');
+  }catch(e){ box.innerHTML = '<div class="msg bad">' + esc(t('Lỗi kết nối tới hệ thống.')) + '</div>'; }
+}
+async function runBackup(){
+  vendorMsg('healthMsg', t('Đang sao lưu…'), 'ok');
+  try{ const r = await apiA({action:'backupNow'}); if (r.ok){ vendorMsg('healthMsg', t('Đã sao lưu: {name}', {name:r.name}), 'ok'); loadHealth(); } else vendorMsg('healthMsg', te(r.error) || t('Gửi thất bại.')); }
+  catch(e){ vendorMsg('healthMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+async function runQueue(){
+  try{ const r = await apiA({action:'queueNow'}); if (r.ok){ vendorMsg('healthMsg', t('Đã gửi lại {n} email, còn {m} email trong hàng đợi.', {n:r.sent, m:r.left}), 'ok'); loadHealth(); } else vendorMsg('healthMsg', te(r.error) || t('Gửi thất bại.')); }
+  catch(e){ vendorMsg('healthMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+// ---- Bảo mật tài khoản: xác thực 2 bước (TOTP) ----
+async function load2fa(){
+  const box = document.getElementById('tfaBox');
+  try{
+    const r = await apiA({action:'totpStatus'});
+    if (!r.ok) return;
+    document.getElementById('tfaSetup').style.display = 'none';
+    box.innerHTML = r.enabled
+      ? '<div class="msg ok">' + esc(t('Xác thực 2 bước đang BẬT cho tài khoản của bạn.')) + '</div>' + (r.required ? '<div class="hint">' + esc(t('Hệ thống đang bắt buộc xác thực 2 bước cho Admin.')) + '</div>'
+        : '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:8px;"><div><label>' + esc(t('Nhập mã Authenticator hiện tại để tắt')) + '</label><input id="tfaOffCode" inputmode="numeric" maxlength="6"></div><button class="btn-ghost" onclick="disable2fa()">' + esc(t('Tắt xác thực 2 bước')) + '</button></div>')
+      : '<div class="hint">' + esc(t('Xác thực 2 bước đang TẮT. Bật để Admin phải nhập thêm mã từ ứng dụng Authenticator khi đăng nhập.')) + '</div><button class="btn-primary btn-sm" style="margin-top:8px;" onclick="begin2fa()">' + esc(t('Bật xác thực 2 bước')) + '</button>';
+  }catch(e){}
+}
+async function begin2fa(){
+  try{
+    const r = await apiA({action:'totpBegin'});
+    if (!r.ok){ vendorMsg('tfaMsg', te(r.error) || t('Gửi thất bại.')); return; }
+    document.getElementById('tfaSecret').textContent = r.secret; document.getElementById('tfaUri').href = r.uri;
+    document.getElementById('tfaSetup').style.display = ''; document.getElementById('tfaCode').value = ''; vendorMsg('tfaMsg', '');
+  }catch(e){ vendorMsg('tfaMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+async function confirm2fa(){
+  try{
+    const r = await apiA({action:'totpConfirm', code:document.getElementById('tfaCode').value.trim()});
+    if (r.ok){ vendorMsg('tfaMsg', t('Đã bật xác thực 2 bước.'), 'ok'); load2fa(); } else vendorMsg('tfaMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('tfaMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+async function disable2fa(){
+  try{
+    const r = await apiA({action:'totpDisable', code:(document.getElementById('tfaOffCode') || {}).value});
+    if (r.ok){ vendorMsg('tfaMsg', t('Đã tắt xác thực 2 bước.'), 'ok'); load2fa(); } else vendorMsg('tfaMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('tfaMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+// ====== TAB TỔNG QUAN (dashboard), XUNG ĐỘT, ĐỐI TÁC (công ty, bảng điểm, MDF) ======
+const STATUS_COLOR = {Submitted:'#242a5c', UnderReview:'#b7791f', NeedInfo:'#c03929', Approved:'#1a8a4c', Rejected:'#c03929', Won:'#0f6b3a', Lost:'#6b7280'};
+function kpi(label, value, sub){ return '<div class="kpi"><b>' + esc(value) + '</b><span>' + esc(label) + (sub ? ' · ' + esc(sub) : '') + '</span></div>'; }
+function barRows(items, max, color){
+  return items.map(x=>'<div class="barrow"><span class="lbl" title="' + esc(x.label) + '">' + esc(x.label) + '</span><div class="bar" style="width:' + Math.max(2, Math.round((x.value / (max || 1)) * 60)) + '%;' + (x.color || color ? 'background:' + (x.color || color) : '') + '"></div><span>' + esc(x.text !== undefined ? x.text : x.value) + '</span></div>').join('');
+}
+
+async function loadDash(){
+  vendorMsg('dashMsg', '');
+  try{
+    const r = await apiA({action:'dashboard'});
+    if (r.ok) renderDash(r); else vendorMsg('dashMsg', te(r.error) || t('Lỗi kết nối.'));
+  }catch(e){ vendorMsg('dashMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+function renderDash(d){
+  const isA = d.role === 'Admin', S = d.Status || {};
+  const open = (S.Submitted || 0) + (S.UnderReview || 0) + (S.NeedInfo || 0) + (S.Approved || 0);
+  const pipeline = ['Submitted','UnderReview','NeedInfo','Approved'].reduce((s, k)=>s + ((d.ValueByStatus || {})[k] || 0), 0);
+  let h = '<div class="kpis">' + kpi(t('Tổng số dự án'), d.Total) + kpi(t('Đang theo dõi'), open) + kpi(t('Đã thắng (Won)'), S.Won || 0, t('Tỷ lệ thắng') + ' ' + d.WinRate + '%') +
+    kpi(t('Giá trị pipeline (ước tính)'), fmtMoney(pipeline)) + kpi(t('Giá trị đã thắng (ước tính)'), fmtMoney((d.ValueByStatus || {}).Won || 0)) + '</div>';
+  h += '<h4 style="margin:6px 0;">' + esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</h4><div class="kpis">' +
+    kpi(t('Chờ chốt CN (đã Won)'), fmtVendor(d.Rebate.Pending)) + kpi(t('Đã chốt CN'), fmtVendor(d.Rebate.Issued)) + kpi(t('Dự báo từ pipeline'), fmtVendor(d.Rebate.Forecast)) + '</div>';
+  if (isA){
+    h += '<h4 style="margin:6px 0;">' + esc(t('Vận hành')) + '</h4><div class="kpis">' +
+      kpi(t('Thời gian duyệt trung bình'), d.AvgReviewHours === null ? '—' : d.AvgReviewHours + ' ' + t('giờ')) + kpi(t('Quá hạn SLA ({h} giờ)', {h:d.SlaHours}), d.SlaOverdue) +
+      kpi(t('Xung đột chờ xử lý'), d.ConflictsOpen) + kpi(t('Sắp hết bảo hộ (≤14 ngày)'), d.ProtectExpiring) + kpi(t('Đã hết bảo hộ'), d.ProtectExpired) +
+      kpi(t('Chưa phân công'), d.Unassigned) + kpi(t('Báo giá đã gửi'), d.Quotes.Sent) + kpi(t('Tỷ lệ chấp nhận báo giá'), d.Quotes.Rate + '%') + '</div>';
+    if (d.Assignees.length) h += '<div class="hint">' + esc(t('Đang phụ trách')) + ': ' + d.Assignees.map(a=>esc(a.Email) + ' (' + a.Count + ')').join(' · ') + '</div>';
+  }
+  const smax = Math.max.apply(null, Object.keys(S).map(k=>S[k]).concat([1]));
+  h += '<h4 style="margin:12px 0 4px;">' + esc(t('Theo trạng thái')) + '</h4>' + barRows(Object.keys(S).map(k=>({label:statusLabel(k), value:S[k], color:STATUS_COLOR[k]})), smax);
+  const mmax = Math.max.apply(null, d.Months.map(m=>m.Registered).concat([1]));
+  h += '<h4 style="margin:12px 0 4px;">' + esc(t('12 tháng gần nhất')) + ' (' + esc(t('đăng ký')) + ' / ' + esc(t('thắng')) + ')</h4>' + barRows(d.Months.map(m=>({label:m.Month, value:m.Registered, text:m.Registered + ' / ' + m.Won})), mmax);
+  const imax = Math.max.apply(null, d.Industry.map(x=>x.Count).concat([1]));
+  h += '<h4 style="margin:12px 0 4px;">' + esc(t('Theo ngành')) + '</h4>' + barRows(d.Industry.map(x=>({label:industryLabel(x.Name), value:x.Count})), imax);
+  h += '<h4 style="margin:12px 0 4px;">' + esc(t('Đối tác hàng đầu')) + '</h4><div class="scrollx"><table class="lines-table"><thead><tr><th>' + esc(t('Đối tác')) + '</th><th>' + esc(t('Dự án')) + '</th><th>' + esc(t('Thắng')) + '</th><th>' + esc(t('Giá trị đã thắng (ước tính)')) + '</th></tr></thead><tbody>' +
+    d.Partners.map(p=>'<tr><td>' + esc(p.Name) + '</td><td>' + p.Total + '</td><td>' + p.Won + '</td><td>' + esc(fmtMoney(p.WonValue)) + '</td></tr>').join('') + '</tbody></table></div>';
+  document.getElementById('dashBox').innerHTML = h;
+}
+
+// ---- Xung đột ----
+function conflictSide(title, s){
+  if (!s) return '<div class="cm"><b>' + esc(title) + '</b><br>—</div>';
+  return '<div class="cm"><b>' + esc(title) + '</b> · ' + esc(s.ID) + '<br>' + esc(s.TenDuAn) + '<br>' + esc(t('Đối tác')) + ': ' + esc(s.CongTyDoiTac) + ' (' + esc(s.NguoiDangKy) + ', ' + esc(s.Email) + ')<br>' +
+    esc(t('KH')) + ': ' + esc(s.KhachHangCuoi) + ' — ' + esc(t('MST')) + ': ' + esc(s.MaSoThue) + '<br>' + esc(t('Địa chỉ KH')) + ': ' + esc(s.DiaChiKhachHang) + '<br>' +
+    esc(t('Giá trị ước tính')) + ': ' + esc(groupDigits(s.GiaTriUocTinh)) + '<br>' + '<span class="badge st-' + esc(s.TrangThai) + '">' + esc(statusLabel(s.TrangThai)) + '</span> ' + esc(t('Đăng ký')) + ': ' + esc(shortDate(s.Timestamp)) +
+    (s.BaoHoDen ? ' · ' + esc(t('Bảo hộ đến')) + ': ' + esc(s.BaoHoDen) : '') + '</div>';
+}
+async function loadConf(){
+  vendorMsg('confMsg', '');
+  try{
+    const r = await apiA({action:'listConflicts'});
+    if (!r.ok){ vendorMsg('confMsg', te(r.error) || t('Lỗi kết nối.')); return; }
+    const box = document.getElementById('confBox'); box.innerHTML = '';
+    if (!r.rows.length){ box.innerHTML = '<div class="hint" style="margin-top:8px;">' + esc(t('Không có xung đột nào cần xử lý.')) + '</div>'; return; }
+    r.rows.forEach(x=>{
+      const c = H('<div class="subcard"><div><span class="pill bad">' + esc(x.Reason === 'tax' ? t('Trùng mã số thuế') : t('Tên khách hàng gần giống')) + '</span></div>' +
+        '<div class="row">' + conflictSide(t('Đăng ký mới'), x.New) + conflictSide(t('Dự án đã có'), x.Old) + '</div>' +
+        '<label>' + esc(t('Ghi chú cho quyết định')) + '</label><input class="cf-note"><div class="toolbar" style="margin-top:8px;">' +
+        '<button class="btn-ghost btn-sm" data-r="keepBoth">' + esc(t('Giữ cả hai')) + '</button><button class="btn-ghost btn-sm" data-r="rejectNew">' + esc(t('Từ chối dự án mới')) + '</button><button class="btn-ghost btn-sm" data-r="rejectOld">' + esc(t('Từ chối dự án cũ')) + '</button></div></div>');
+      c.querySelectorAll('button[data-r]').forEach(b=>{ b.onclick = ()=>resolveConflict(x.New.ID, b.dataset.r, c.querySelector('.cf-note').value); });
+      box.appendChild(c);
+    });
+  }catch(e){ vendorMsg('confMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+async function resolveConflict(id, resolution, note){
+  if (!confirm(t('Xác nhận xử lý xung đột này?'))) return;
+  try{
+    const r = await apiA({action:'resolveConflict', id:id, resolution:resolution, note:note});
+    if (r.ok){ await loadConf(); vendorMsg('confMsg', t('Đã xử lý xung đột.'), 'ok'); } else vendorMsg('confMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('confMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+// ---- Đối tác: công ty, bảng điểm, MDF ----
+let partRows = [], partSelected = '';
+async function loadPart(){
+  vendorMsg('partMsg', '');
+  try{
+    const [s, c] = await Promise.all([apiA({action:'partnerStats'}), apiA({action:'listCompanies'})]);
+    if (!s.ok || !c.ok){ vendorMsg('partMsg', te((s.ok ? c : s).error) || t('Lỗi kết nối.')); return; }
+    partRows = s.rows; companiesRows = c.rows; window.__tiers = c.tiers || [];
+    renderPart();
+    if (partSelected) await loadMdf(partSelected);
+  }catch(e){ vendorMsg('partMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+function tierPill(tier, manual){ return tier ? '<span class="pill ' + (tier === 'Platinum' || tier === 'Gold' ? 'ok' : 'warn') + '">' + esc(tier) + (manual ? ' ✎' : '') + '</span>' : '<span class="pill">—</span>'; }
+function renderPart(){
+  const box = document.getElementById('partBox');
+  const tiers = ['', 'Platinum', 'Gold', 'Silver', 'Bronze'];
+  let h = '<h4 style="margin:4px 0;">' + esc(t('Thêm công ty đối tác')) + '</h4><div class="row"><div><label>' + esc(t('Tên công ty')) + '</label><input id="coName"></div><div><label>' + esc(t('Hạng (để trống = tự đề xuất)')) + '</label><select id="coTier" data-noi18n>' +
+    tiers.map(x=>'<option value="' + x + '">' + esc(x || '—') + '</option>').join('') + '</select></div></div><button class="btn-primary btn-sm" style="margin-top:8px;" onclick="addCompany()">' + esc(t('Thêm công ty')) + '</button><div id="coMsg" data-noi18n></div>';
+  h += '<h4 style="margin:14px 0 4px;">' + esc(t('Bảng điểm đối tác')) + '</h4><div class="scrollx"><table class="lines-table"><thead><tr><th>' + esc(t('Đối tác')) + '</th><th>' + esc(t('Hạng')) + '</th><th>' + esc(t('Thành viên')) + '</th><th>' + esc(t('Dự án')) + '</th><th>' + esc(t('Thắng')) + '</th><th>' +
+    esc(t('Tỷ lệ thắng')) + '</th><th>' + esc(t('Giá trị đã thắng (ước tính)')) + '</th><th>' + esc(t('Số dư MDF')) + '</th><th></th></tr></thead><tbody>';
+  partRows.forEach(p=>{
+    const c = companiesRows.filter(x=>x.CompanyID === p.CompanyID)[0];
+    h += '<tr' + (p.Registered ? '' : ' style="opacity:.75"') + '><td>' + esc(p.Name) + (p.Registered ? '' : ' <span class="pill warn">' + esc(t('Chưa đăng ký công ty')) + '</span>') + (c && c.Status === 'inactive' ? ' <span class="pill bad">' + esc(t('Ngừng')) + '</span>' : '') + '</td><td>' + tierPill(p.Tier, p.TierManual) +
+      (p.TierManual && p.TierSuggested ? '<br><span class="hint">' + esc(t('Đề xuất')) + ': ' + esc(p.TierSuggested) + '</span>' : '') + '</td><td>' + (c ? c.Members.length : '') + '</td><td>' + p.Total + ' (' + p.Open + ' ' + esc(t('đang mở')) + ')</td><td>' + p.Won + '</td><td>' + p.WinRate + '%</td><td>' +
+      esc(fmtMoney(p.WonValue)) + '</td><td>' + (p.Registered ? esc(fmtMoney(p.MdfBalance)) + (p.MdfPending ? ' <span class="hint">(' + esc(t('chờ duyệt')) + ': ' + esc(fmtMoney(p.MdfPending)) + ')</span>' : '') : '') + '</td><td style="white-space:nowrap;">' +
+      (p.Registered ? '<button class="btn-ghost btn-sm" onclick="editCompany(\'' + esc(p.CompanyID) + '\')">' + esc(t('Sửa')) + '</button> <button class="btn-ghost btn-sm" onclick="partSelected=\'' + esc(p.CompanyID) + '\'; loadMdf(\'' + esc(p.CompanyID) + '\')">MDF</button>' : '') + '</td></tr>';
+  });
+  h += '</tbody></table></div><div id="coEdit" data-noi18n></div><div id="mdfBox" data-noi18n></div>';
+  box.innerHTML = h;
+}
+async function addCompany(){
+  const name = document.getElementById('coName').value.trim(), tier = document.getElementById('coTier').value;
+  try{
+    const r = await apiA({action:'saveCompany', name:name, tier:tier});
+    if (r.ok){ await loadPart(); vendorMsg('coMsg', t('Đã thêm công ty {id}. Đã gán {n} dự án cũ.', {id:r.id, n:r.backfilled}), 'ok'); } else vendorMsg('coMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('coMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+function editCompany(id){
+  const c = companiesRows.filter(x=>x.CompanyID === id)[0]; if (!c) return;
+  const tiers = ['', 'Platinum', 'Gold', 'Silver', 'Bronze'];
+  const box = document.getElementById('coEdit');
+  box.innerHTML = '<div class="subcard" style="margin-top:10px;"><b>' + esc(c.CompanyID) + '</b><div class="row"><div><label>' + esc(t('Tên công ty')) + '</label><input id="ceName" value="' + esc(c.Name) + '"></div><div><label>' + esc(t('Hạng')) + '</label><select id="ceTier" data-noi18n>' +
+    tiers.map(x=>'<option value="' + x + '"' + (x === c.Tier ? ' selected' : '') + '>' + esc(x || '—') + '</option>').join('') + '</select></div></div><div class="row"><div><label>' + esc(t('Trạng thái')) + '</label><select id="ceStatus" data-noi18n><option value="active"' + (c.Status !== 'inactive' ? ' selected' : '') + '>' + esc(t('Đang hoạt động')) + '</option><option value="inactive"' + (c.Status === 'inactive' ? ' selected' : '') + '>' + esc(t('Ngừng')) + '</option></select></div><div><label>' + esc(t('Ghi chú')) + '</label><input id="ceNote" value="' + esc(c.Note) + '"></div></div>' +
+    '<div class="hint">' + esc(t('Thành viên')) + ': ' + (c.Members.length ? c.Members.map(esc).join(', ') : '—') + ' — ' + esc(t('Gán thành viên trong tab Thiết lập → Phân quyền email.')) + '</div><button class="btn-primary btn-sm" style="margin-top:8px;" onclick="saveCompanyEdit(\'' + esc(id) + '\')">' + esc(t('Lưu')) + '</button></div>';
+}
+async function saveCompanyEdit(id){
+  try{
+    const r = await apiA({action:'saveCompany', id:id, name:document.getElementById('ceName').value, tier:document.getElementById('ceTier').value, status:document.getElementById('ceStatus').value, note:document.getElementById('ceNote').value});
+    if (r.ok){ await loadPart(); vendorMsg('coMsg', t('Đã lưu.'), 'ok'); } else vendorMsg('coMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('coMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+const MDF_TYPE = {Allocation:'Cấp quỹ', Claim:'Chi (claim)', Adjust:'Điều chỉnh'};
+async function loadMdf(cid){
+  const box = document.getElementById('mdfBox'); if (!box) return;
+  try{
+    const r = await apiA({action:'listMdf', companyId:cid});
+    if (!r.ok){ box.innerHTML = '<div class="msg bad">' + esc(te(r.error)) + '</div>'; return; }
+    const c = companiesRows.filter(x=>x.CompanyID === cid)[0];
+    box.innerHTML = '<div class="subcard" style="margin-top:10px;"><b>MDF — ' + esc(c ? c.Name : cid) + '</b><div class="kpis">' + kpi(t('Số dư MDF'), fmtMoney(r.balance.balance)) + kpi(t('Yêu cầu chờ duyệt'), fmtMoney(r.balance.pending)) + '</div>' +
+      '<div class="row"><div><label>' + esc(t('Loại')) + '</label><select id="mdType" data-noi18n>' + Object.keys(MDF_TYPE).map(k=>'<option value="' + k + '">' + esc(t(MDF_TYPE[k])) + '</option>').join('') + '</select></div><div><label>' + esc(t('Số tiền (VNĐ)')) + '</label><input id="mdAmount" inputmode="numeric"></div></div>' +
+      '<div class="row"><div><label>' + esc(t('Tham chiếu')) + '</label><input id="mdRef"></div><div><label>' + esc(t('Mô tả')) + '</label><input id="mdDesc"></div></div><button class="btn-primary btn-sm" style="margin-top:8px;" onclick="addMdfEntry(\'' + esc(cid) + '\')">' + esc(t('Ghi nhận')) + '</button><div id="mdfMsg" data-noi18n></div>' +
+      '<div class="scrollx"><table class="lines-table"><thead><tr><th>' + esc(t('Thời gian')) + '</th><th>' + esc(t('Loại')) + '</th><th>' + esc(t('Số tiền (VNĐ)')) + '</th><th>' + esc(t('Tham chiếu')) + '</th><th>' + esc(t('Mô tả')) + '</th><th>' + esc(t('Trạng thái')) + '</th><th></th></tr></thead><tbody>' +
+      r.rows.map(x=>'<tr><td>' + esc(x.Time) + '</td><td>' + esc(t(MDF_TYPE[x.Type] || x.Type)) + '</td><td>' + esc(fmtMoney(x.Amount)) + '</td><td>' + esc(x.Ref) + '</td><td>' + esc(x.Desc) + '</td><td>' + esc(x.Status) + '</td><td>' +
+        (x.Status === 'Pending' ? '<button class="btn-primary btn-sm" onclick="mdfDecide(' + x.row + ',\'Approved\',\'' + esc(cid) + '\')">' + esc(t('Duyệt')) + '</button> <button class="btn-ghost btn-sm" onclick="mdfDecide(' + x.row + ',\'Rejected\',\'' + esc(cid) + '\')">' + esc(t('Từ chối')) + '</button>' : '') + '</td></tr>').join('') + '</tbody></table></div></div>';
+  }catch(e){}
+}
+async function addMdfEntry(cid){
+  partSelected = cid;
+  try{
+    const r = await apiA({action:'addMdf', companyId:cid, type:document.getElementById('mdType').value, amount:rawDigits(document.getElementById('mdAmount').value) || document.getElementById('mdAmount').value, ref:document.getElementById('mdRef').value, desc:document.getElementById('mdDesc').value});
+    if (r.ok){ await loadPart(); vendorMsg('mdfMsg', t('Đã ghi nhận.'), 'ok'); } else vendorMsg('mdfMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('mdfMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+async function mdfDecide(row, decision, cid){
+  partSelected = cid;
+  try{
+    const r = await apiA({action:'mdfDecision', row:row, decision:decision});
+    if (r.ok){ await loadPart(); vendorMsg('mdfMsg', t('Đã xử lý yêu cầu.'), 'ok'); } else vendorMsg('mdfMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('mdfMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+// ====== BẢNG CHI TIẾT DỰ ÁN: dòng thời gian, bình luận, tài liệu, báo giá, đơn hàng thực tế ======
+const TL_LABEL = {created:'Đăng ký', edited:'Chỉnh sửa', status:'Đổi trạng thái', quote:'Báo giá', protect:'Bảo hộ', attach:'Tài liệu', assign:'Phân công', actual:'Đơn hàng thực tế', conflict:'Xung đột', comment:'Bình luận'};
+const CH_LABEL = {public:'Công khai (đại lý)', internal:'Nội bộ EAVN', vendor:'Vendor'};
+const VIS_LABEL = {internal:'Nội bộ EAVN', dealer:'Đại lý', dealer_vendor:'Đại lý và Vendor'};
+const QUOTE_ST = {Sent:'Đã gửi', Accepted:'Đã chấp nhận', Superseded:'Đã thay bằng bản mới', Expired:'Hết hiệu lực'};
+
+function projectPanel(s, role){
+  const id = s.ID;
+  const root = H('<div class="panel"><button class="btn-ghost btn-sm pp-toggle"></button><div class="pp-body" style="display:none;"><div class="ptabs"></div><div class="pp-content" data-noi18n></div></div></div>');
+  root.querySelector('.pp-toggle').textContent = role === 'vendor' ? t('Chi tiết, bình luận, tài liệu') : t('Chi tiết, bình luận, tài liệu, báo giá');
+  const tabs = [['tl', t('Dòng thời gian')], ['cm', t('Bình luận')], ['at', t('Tài liệu')]];
+  if (role !== 'vendor') tabs.push(['qt', t('Báo giá')]);
+  if (role === 'admin' && (s.TrangThai === 'Won')) tabs.push(['ac', t('Đơn hàng thực tế')]);
+  const bar = root.querySelector('.ptabs'), content = root.querySelector('.pp-content');
+  const show = (k)=>{
+    bar.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.k === k));
+    content.innerHTML = '<div class="hint">' + esc(t('Đang tải…')) + '</div>';
+    ({tl:ppTimeline, cm:ppComments, at:ppAttach, qt:ppQuotes, ac:ppActual})[k](content, s, role, ()=>show(k));
+  };
+  tabs.forEach(([k, label])=>{ const b = H('<button class="btn-ghost btn-sm" data-k="' + k + '"></button>'); b.textContent = label; b.onclick = ()=>show(k); bar.appendChild(b); });
+  root.querySelector('.pp-toggle').onclick = ()=>{
+    const body = root.querySelector('.pp-body'); const open = body.style.display === 'none';
+    body.style.display = open ? '' : 'none';
+    if (open && !content.dataset.loaded){ content.dataset.loaded = '1'; show('tl'); }
+  };
+  return root;
+}
+function ppErr(box, r){ box.innerHTML = '<div class="msg bad">' + esc(te((r || {}).error) || t('Lỗi kết nối.')) + '</div>'; }
+
+async function ppTimeline(box, s){
+  try{
+    const r = await apiA({action:'getTimeline', id:s.ID}); if (!r.ok) return ppErr(box, r);
+    if (!r.events.length){ box.innerHTML = '<div class="hint">' + esc(t('Chưa có hoạt động nào.')) + '</div>'; return; }
+    box.innerHTML = '<div class="tl">' + r.events.map(e=>'<div><b>' + esc(e.Time) + '</b> · ' + esc(e.Actor) + ' · <span class="pill">' + esc(t(TL_LABEL[e.Type] || e.Type)) + '</span>' +
+      (e.Type === 'status' ? ' ' + esc(statusLabel(e.From)) + ' → <b>' + esc(statusLabel(e.To)) + '</b>' : '') + (e.Type === 'comment' && e.Channel ? ' <span class="pill warn">' + esc(t(CH_LABEL[e.Channel] || e.Channel)) + '</span>' : '') +
+      (e.Note ? '<br><span class="hint" style="margin:0">' + esc(e.Note) + '</span>' : '') + '</div>').join('') + '</div>';
+  }catch(e){ ppErr(box); }
+}
+
+async function ppComments(box, s, role, reload){
+  try{
+    const r = await apiA({action:'listComments', id:s.ID}); if (!r.ok) return ppErr(box, r);
+    let h = r.rows.length ? r.rows.map(c=>'<div class="cm' + (c.Mine ? ' mine' : '') + '"><b>' + esc(c.Author) + '</b> · ' + esc(c.Time) + (role === 'admin' ? ' <span class="pill warn">' + esc(t(CH_LABEL[c.Channel] || c.Channel)) + '</span>' : '') + '<br>' + esc(c.Text) + '</div>').join('')
+      : '<div class="hint">' + esc(t('Chưa có bình luận nào.')) + '</div>';
+    h += '<textarea class="cm-text" placeholder="' + esc(t('Viết bình luận…')) + '" style="min-height:54px;margin-top:6px;"></textarea><div class="toolbar" style="margin-top:6px;">' +
+      (role === 'admin' ? '<select class="cm-ch" data-noi18n style="width:auto;">' + ['public', 'internal', 'vendor'].map(k=>'<option value="' + k + '">' + esc(t(CH_LABEL[k])) + '</option>').join('') + '</select>' : '') +
+      '<button class="btn-primary btn-sm cm-send">' + esc(t('Gửi bình luận')) + '</button></div><div class="cm-msg" data-noi18n></div>';
+    box.innerHTML = h;
+    box.querySelector('.cm-send').onclick = async ()=>{
+      const text = box.querySelector('.cm-text').value.trim(); if (!text) return;
+      const ch = box.querySelector('.cm-ch');
+      try{
+        const x = await apiA({action:'addComment', id:s.ID, text:text, channel:ch ? ch.value : undefined});
+        if (x.ok) reload(); else box.querySelector('.cm-msg').innerHTML = '<div class="msg bad">' + esc(te(x.error) || t('Gửi thất bại.')) + '</div>';
+      }catch(e){ box.querySelector('.cm-msg').innerHTML = '<div class="msg bad">' + esc(t('Lỗi kết nối tới hệ thống.')) + '</div>'; }
+    };
+  }catch(e){ ppErr(box); }
+}
+
+function readFileB64(file){
+  return new Promise((res, rej)=>{ const fr = new FileReader(); fr.onload = ()=>res(String(fr.result).split(',')[1] || ''); fr.onerror = rej; fr.readAsDataURL(file); });
+}
+async function ppAttach(box, s, role, reload){
+  try{
+    const r = await apiA({action:'listAttachments', id:s.ID}); if (!r.ok) return ppErr(box, r);
+    let h = r.rows.length ? '<table class="lines-table"><thead><tr><th>' + esc(t('Tài liệu')) + '</th><th>' + esc(t('Dung lượng')) + '</th><th>' + esc(t('Người tải lên')) + '</th><th>' + esc(t('Thời gian')) + '</th>' + (role === 'admin' ? '<th>' + esc(t('Hiển thị cho')) + '</th>' : '') + '<th></th></tr></thead><tbody>' +
+      r.rows.map(a=>'<tr><td><a href="#" class="at-dl" data-f="' + esc(a.FileId) + '" data-n="' + esc(a.Name) + '">' + esc(a.Name) + '</a></td><td>' + esc(fmtBytes(a.Size)) + '</td><td>' + esc(a.UploadedBy) + '</td><td>' + esc(a.Time) + '</td>' +
+        (role === 'admin' ? '<td>' + esc(t(VIS_LABEL[a.Visibility] || a.Visibility)) + '</td>' : '') + '<td>' + (a.CanDelete ? '<button class="btn-ghost btn-sm at-del" data-f="' + esc(a.FileId) + '">' + esc(t('Xoá')) + '</button>' : '') + '</td></tr>').join('') + '</tbody></table>'
+      : '<div class="hint">' + esc(t('Chưa có tài liệu nào.')) + '</div>';
+    h += '<div class="hint" style="margin-top:6px;">' + esc(t('Cho phép: pdf, doc, docx, xls, xlsx, csv, ppt, pptx, png, jpg, txt, zip. Tối đa 8 MB mỗi file, 20 file mỗi dự án.')) + '</div>';
+    if (role !== 'vendor') h += '<div class="toolbar"><input type="file" class="at-file" style="width:auto;">' + (role === 'admin' ? '<select class="at-vis" data-noi18n style="width:auto;">' + ['dealer', 'internal', 'dealer_vendor'].map(k=>'<option value="' + k + '">' + esc(t(VIS_LABEL[k])) + '</option>').join('') + '</select>' : '') + '<button class="btn-primary btn-sm at-up">' + esc(t('Tải lên')) + '</button></div>';
+    h += '<div class="at-msg" data-noi18n></div>';
+    box.innerHTML = h;
+    box.querySelectorAll('.at-dl').forEach(a=>{ a.onclick = async (ev)=>{ ev.preventDefault();
+      try{ const x = await apiA({action:'getAttachment', id:s.ID, fileId:a.dataset.f}); if (x.ok) downloadB64(x.name, x.data); else box.querySelector('.at-msg').innerHTML = '<div class="msg bad">' + esc(te(x.error)) + '</div>'; }catch(e){} }; });
+    box.querySelectorAll('.at-del').forEach(b=>{ b.onclick = async ()=>{ if (!confirm(t('Xoá tài liệu này?'))) return;
+      try{ const x = await apiA({action:'deleteAttachment', id:s.ID, fileId:b.dataset.f}); if (x.ok) reload(); else box.querySelector('.at-msg').innerHTML = '<div class="msg bad">' + esc(te(x.error)) + '</div>'; }catch(e){} }; });
+    const up = box.querySelector('.at-up');
+    if (up) up.onclick = async ()=>{
+      const f = box.querySelector('.at-file').files[0], msg = box.querySelector('.at-msg');
+      if (!f){ msg.innerHTML = '<div class="msg bad">' + esc(t('Vui lòng chọn file.')) + '</div>'; return; }
+      if (f.size > 8 * 1024 * 1024){ msg.innerHTML = '<div class="msg bad">' + esc(t('File quá lớn (tối đa 8 MB).')) + '</div>'; return; }
+      msg.innerHTML = '<div class="hint">' + esc(t('Đang tải lên…')) + '</div>';
+      try{
+        const vis = box.querySelector('.at-vis');
+        const x = await apiA({action:'uploadAttachment', id:s.ID, name:f.name, data:await readFileB64(f), visibility:vis ? vis.value : undefined});
+        if (x.ok) reload(); else msg.innerHTML = '<div class="msg bad">' + esc(te(x.error) || t('Gửi thất bại.')) + '</div>';
+      }catch(e){ msg.innerHTML = '<div class="msg bad">' + esc(t('Lỗi kết nối tới hệ thống.')) + '</div>'; }
+    };
+  }catch(e){ ppErr(box); }
+}
+
+function quoteTable(q){
+  const multi = optionsOf(q.Lines).length > 1;
+  let h = '<table class="lines-table"><thead><tr>' + (multi ? '<th>' + esc(t('Phương án')) + '</th>' : '') + '<th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Thành tiền sau rebate (VNĐ)')) + '</th></tr></thead><tbody>';
+  q.Lines.forEach(l=>{
+    const p = parseFloat(l.price), rb = parseFloat(l.rebatePct) || 0, qty = parseFloat(l.qty) || 0;
+    h += '<tr>' + (multi ? '<td>' + esc(t('PA{n}', {n:lineOptNum(l)})) + '</td>' : '') + '<td>' + esc(l.model) + '</td><td>' + esc(l.qty) + '</td><td>' + (isNaN(p) ? '-' : esc(fmtMoney(p))) + '</td><td>' + rb + '%</td><td>' + (isNaN(p) ? '-' : esc(fmtMoney(p * (1 - rb / 100) * qty))) + '</td></tr>';
+  });
+  h += '</tbody></table>';
+  Object.keys(q.Totals || {}).map(Number).sort((a, b)=>a - b).forEach(k=>{ h += '<div class="total-line">' + (multi ? '<b>' + esc(t('Phương án {n}', {n:k})) + '</b>: ' : '') + esc(t('Tổng SAU rebate (giá cuối cùng, đã gồm VAT)')) + ': <b>' + esc(fmtMoney(q.Totals[k].after)) + '</b></div>'; });
+  return h;
+}
+function quoteExcel(q){
+  const rows = q.Lines.map(l=>{ const p = parseFloat(l.price), rb = parseFloat(l.rebatePct) || 0, qty = parseFloat(l.qty) || 0;
+    return {QuoteNo:q.QuoteNo, PhuongAn:lineOptNum(l), Model:l.model, SoLuong:l.qty, DonGia_VND_DaGomVAT:isNaN(p) ? '' : p, PhanTramRebate:rb, DonGiaSauRebate:isNaN(p) ? '' : p * (1 - rb / 100), ThanhTienSauRebate:isNaN(p) ? '' : p * (1 - rb / 100) * qty, HieuLucDen:q.ValidUntil}; });
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Quote');
+  XLSX.writeFile(wb, q.QuoteNo + '.xlsx');
+}
+async function ppQuotes(box, s, role, reload){
+  try{
+    const r = await apiA({action:'listQuotes', id:s.ID}); if (!r.ok) return ppErr(box, r);
+    let h = '';
+    if (role === 'admin') h += '<div class="toolbar"><label style="margin:0">' + esc(t('Hiệu lực (ngày)')) + '</label><input class="q-days" type="number" min="1" max="365" value="30" style="width:90px;"><input class="q-note" placeholder="' + esc(t('Ghi chú cho đại lý (tuỳ chọn)')) + '" style="width:220px;"><button class="btn-primary btn-sm q-send">' + esc(t('Gửi báo giá phiên bản mới')) + '</button></div><div class="q-msg" data-noi18n></div>';
+    h += r.rows.length ? r.rows.map((q, i)=>'<div class="subcard" data-q="' + esc(q.QuoteNo) + '"><b>' + esc(q.QuoteNo) + '</b> <span class="pill ' + (q.Status === 'Accepted' ? 'ok' : (q.Status === 'Sent' ? 'warn' : '')) + '">' + esc(t(QUOTE_ST[q.Status] || q.Status)) + '</span> · ' + esc(t('Hiệu lực đến')) + ': ' + esc(q.ValidUntil) +
+      (q.Status === 'Accepted' ? ' · ' + esc(t('Chấp nhận bởi')) + ' ' + esc(q.AcceptedBy) + ' (' + esc(q.AcceptedAt) + ')' : '') + (role === 'admin' ? ' · ' + esc(q.CreatedBy) : '') + (q.Note ? '<div class="hint">' + esc(q.Note) + '</div>' : '') +
+      '<div class="scrollx">' + quoteTable(q) + '</div><div class="toolbar" style="margin-top:6px;"><button class="btn-ghost btn-sm q-pdf">' + esc(t('Tải PDF')) + '</button><button class="btn-ghost btn-sm q-xls">' + esc(t('Tải Excel')) + '</button>' +
+      (role === 'dealer' && q.Status === 'Sent' ? '<button class="btn-primary btn-sm q-acc">' + esc(t('Chấp nhận báo giá')) + '</button>' : '') + '</div></div>').join('') : '<div class="hint">' + esc(t('Chưa có báo giá nào.')) + '</div>';
+    box.innerHTML = h;
+    const msg = (m, ok_)=>{ const el = box.querySelector('.q-msg') || box; if (box.querySelector('.q-msg')) el.innerHTML = '<div class="msg ' + (ok_ ? 'ok' : 'bad') + '">' + esc(m) + '</div>'; else alert(m); };
+    const sendB = box.querySelector('.q-send');
+    if (sendB) sendB.onclick = async ()=>{
+      try{
+        const x = await apiA({action:'sendQuote', id:s.ID, validDays:box.querySelector('.q-days').value, note:box.querySelector('.q-note').value});
+        if (x.ok) reload(); else msg(te(x.error) || t('Gửi thất bại.'));
+      }catch(e){ msg(t('Lỗi kết nối tới hệ thống.')); }
+    };
+    box.querySelectorAll('[data-q]').forEach((card, i)=>{
+      const q = r.rows[i];
+      card.querySelector('.q-xls').onclick = ()=>quoteExcel(q);
+      card.querySelector('.q-pdf').onclick = async ()=>{ try{ const x = await apiA({action:'quotePdf', quoteNo:q.QuoteNo}); if (x.ok) downloadB64(x.name, x.data, x.mime); }catch(e){} };
+      const acc = card.querySelector('.q-acc');
+      if (acc) acc.onclick = async ()=>{ if (!confirm(t('Chấp nhận báo giá {no}?', {no:q.QuoteNo}))) return;
+        try{ const x = await apiA({action:'acceptQuote', quoteNo:q.QuoteNo}); if (x.ok) reload(); else alert(te(x.error) || t('Gửi thất bại.')); }catch(e){} };
+    });
+  }catch(e){ ppErr(box); }
+}
+
+// Đơn hàng thực tế (Admin, dự án đã Won): làm cơ sở tính CN.
+async function ppActual(box, s, role, reload){
+  const lines = parseLines(s), won = parseInt(s.PhuongAnThang, 10) || optionsOf(lines)[0] || 1;
+  const cur = parseJSONSafe(s.ActualJSON) || {};
+  const am = {}; (cur.lines || []).forEach(a=>{ am[lineOptNum(a) + '|' + String(a.model).toUpperCase()] = a; });
+  const locked = !!s.SoCN;
+  let h = '<div class="hint">' + esc(t('Nhập PO và hoá đơn thực tế. CN sẽ tính trên số lượng thực tế này (và giá nhập thực tế nếu có), không phải số lượng đăng ký.')) + '</div><div class="row"><div><label>' + esc(t('Số PO')) + '</label><input class="ac-po" value="' + esc(cur.po || '') + '"></div><div><label>' + esc(t('Ngày PO')) + '</label><input class="ac-pod" type="date" value="' + esc(cur.poDate || '') + '"></div></div>' +
+    '<div class="row"><div><label>' + esc(t('Số hoá đơn')) + '</label><input class="ac-inv" value="' + esc(cur.invoice || '') + '"></div><div><label>' + esc(t('Ngày hoá đơn')) + '</label><input class="ac-invd" type="date" value="' + esc(cur.invoiceDate || '') + '"></div></div><label>' + esc(t('Ghi chú')) + '</label><input class="ac-note" value="' + esc(cur.note || '') + '">' +
+    '<table class="lines-table" style="margin-top:8px;"><thead><tr><th>Model</th><th>' + esc(t('SL đăng ký')) + '</th><th>' + esc(t('SL thực tế')) + '</th><th>' + esc(t('Giá nhập thực tế (để trống = theo bảng giá)')) + '</th></tr></thead><tbody>';
+  lines.filter(l=>lineOptNum(l) === won).forEach(l=>{
+    const a = am[lineOptNum(l) + '|' + String(l.model).toUpperCase()];
+    h += '<tr data-m="' + esc(l.model) + '" data-o="' + lineOptNum(l) + '"><td>' + esc(l.model) + '</td><td>' + esc(l.qty) + '</td><td><input class="ac-q" type="number" min="0" value="' + esc(a ? a.qty : l.qty) + '"></td><td><input class="ac-ip" type="number" min="0" step="any" value="' + esc(a && a.ip !== '' && a.ip !== undefined ? a.ip : '') + '"></td></tr>';
+  });
+  h += '</tbody></table>' + (locked ? '<div class="hint">' + esc(t('Dự án đã lập CN, không thể sửa đơn hàng thực tế.')) + '</div>' : '<button class="btn-primary btn-sm ac-save" style="margin-top:8px;">' + esc(t('Lưu đơn hàng thực tế')) + '</button>') + '<div class="ac-msg" data-noi18n></div>';
+  box.innerHTML = h;
+  if (locked) box.querySelectorAll('input').forEach(i=>{ i.disabled = true; });
+  const sv = box.querySelector('.ac-save');
+  if (sv) sv.onclick = async ()=>{
+    const q = sel=>box.querySelector(sel).value.trim();
+    const ls = Array.from(box.querySelectorAll('tbody tr')).map(tr=>({opt:parseInt(tr.dataset.o, 10), model:tr.dataset.m, qty:tr.querySelector('.ac-q').value, ip:tr.querySelector('.ac-ip').value}));
+    try{
+      const pay = {po:q('.ac-po'), poDate:q('.ac-pod'), invoice:q('.ac-inv'), invoiceDate:q('.ac-invd'), note:q('.ac-note'), lines:ls};
+      const x = await apiA(Object.assign({action:'saveActual', id:s.ID}, pay));
+      box.querySelector('.ac-msg').innerHTML = x.ok ? '<div class="msg ok">' + esc(t('Đã lưu đơn hàng thực tế.')) + '</div>' : '<div class="msg bad">' + esc(te(x.error) || t('Gửi thất bại.')) + '</div>';
+      if (x.ok) s.ActualJSON = JSON.stringify(pay); // cập nhật tại chỗ để không mất bảng đang mở; tổng rebate cập nhật khi tải lại danh sách
+    }catch(e){ box.querySelector('.ac-msg').innerHTML = '<div class="msg bad">' + esc(t('Lỗi kết nối tới hệ thống.')) + '</div>'; }
+  };
+}
+
+// ====== TÍCH HỢP VÀO THẺ DỰ ÁN (Admin / Đại lý / Vendor), BỘ LỌC, THẺ CÔNG TY, NHÂN BẢN ======
+let adminEmailsList = [], aFilterVal = 'all';
+function finalizeCard(list, card, s, role){ card.appendChild(projectPanel(s, role)); list.appendChild(card); }
+
+async function loadAdminEmails(){
+  try{ const r = await apiA({action:'listUsers'}); if (r.ok) adminEmailsList = r.rows.filter(u=>u.Role === 'Admin').map(u=>u.Email); }catch(e){}
+}
+function adminFilterMatch(s){
+  const open = ['Submitted','UnderReview','NeedInfo','Approved'].indexOf(s.TrangThai || 'UnderReview') >= 0;
+  switch (aFilterVal){
+    case 'mine': return String(s.PhuTrach || '').toLowerCase() === session.email.toLowerCase();
+    case 'unassigned': return open && !s.PhuTrach;
+    case 'sla': return !!(s.Sla && s.Sla.overdue);
+    case 'conflict': return String(s.XungDotGiaiQuyet) === 'open';
+    case 'needinfo': return s.TrangThai === 'NeedInfo';
+    case 'protect': return !!(s.Protect && s.Protect.state === 'active' && s.Protect.daysLeft <= 14);
+    case 'extension': return !!s.GiaHanYeuCau;
+    default: return true;
+  }
+}
+function fillAdminFilter(){
+  const sel = document.getElementById('aFilter'); if (!sel) return;
+  sel.innerHTML = '';
+  [['all', t('Tất cả dự án')], ['mine', t('Của tôi')], ['unassigned', t('Chưa phân công')], ['sla', t('Quá hạn SLA')], ['conflict', t('Có xung đột')], ['needinfo', t('Chờ bổ sung thông tin')], ['protect', t('Sắp hết bảo hộ')], ['extension', t('Yêu cầu gia hạn bảo hộ')]].forEach(([v, l])=>{
+    const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === aFilterVal) o.selected = true; sel.appendChild(o);
+  });
+}
+
+function pillsHTML(list){ return list.map(p=>'<span class="pill ' + p[0] + '">' + esc(p[1]) + '</span>').join(''); }
+
+function adminExtras(s, card, ctrlDiv){
+  const pills = [];
+  if (s.PhuTrach) pills.push(['', t('Phụ trách: {who}', {who:s.PhuTrach})]);
+  if (s.Sla && s.Sla.overdue) pills.push(['bad', t('⏱ Quá hạn SLA ({h} giờ)', {h:s.Sla.waiting})]);
+  const ps = s.Protect;
+  if (ps && ps.state === 'active') pills.push([ps.daysLeft <= 14 ? 'warn' : 'ok', t('🛡 Bảo hộ đến {d} (còn {n} ngày)', {d:ps.until, n:ps.daysLeft})]);
+  else if (ps && ps.state === 'expired' && s.TrangThai === 'Approved') pills.push(['bad', t('Hết bảo hộ ({d})', {d:ps.until})]);
+  if (String(s.XungDotGiaiQuyet) === 'open') pills.push(['bad', t('⚠️ Xung đột với {id}', {id:s.XungDot})]);
+  if (s.GiaHanYeuCau) pills.push(['warn', t('Yêu cầu gia hạn bảo hộ: {note}', {note:s.GiaHanYeuCau})]);
+  if (s.TrangThai === 'NeedInfo') pills.push(['warn', t('Đang chờ đại lý bổ sung thông tin')]);
+  if (pills.length) card.querySelector('.subcard-head > div:first-child').appendChild(H('<div style="margin-top:4px;">' + pillsHTML(pills) + '</div>'));
+  const asg = document.createElement('select'); asg.style.marginTop = '6px'; asg.title = t('Người phụ trách');
+  const o0 = document.createElement('option'); o0.value = ''; o0.textContent = t('— Chưa phân công'); asg.appendChild(o0);
+  adminEmailsList.forEach(e=>{ const o = document.createElement('option'); o.value = e; o.textContent = e; if (String(s.PhuTrach || '').toLowerCase() === e.toLowerCase()) o.selected = true; asg.appendChild(o); });
+  asg.onchange = async ()=>{ try{ const r = await apiA({action:'assignProject', id:s.ID, assignee:asg.value}); if (!r.ok) alert(te(r.error) || t('Gửi thất bại.')); loadSubmissions(); }catch(e){} };
+  ctrlDiv.appendChild(asg);
+  if (['Approved', 'Won'].indexOf(s.TrangThai) >= 0){
+    const eb = document.createElement('button'); eb.className = 'btn-ghost btn-sm'; eb.style.cssText = 'margin-top:6px;display:block;'; eb.textContent = t('🛡 Gia hạn bảo hộ');
+    eb.onclick = async ()=>{ if (!confirm(t('Gia hạn bảo hộ dự án này thêm 90 ngày?'))) return; try{ const r = await apiA({action:'extendProtection', id:s.ID}); if (r.ok) loadSubmissions(); else alert(te(r.error) || t('Gửi thất bại.')); }catch(e){} };
+    ctrlDiv.appendChild(eb);
+  }
+}
+
+function mineExtras(s, card){
+  const status = s.TrangThai || 'UnderReview', left = card.querySelector('.subcard-head > div:first-child'), right = card.querySelector('.subcard-head > div:last-child');
+  const pills = [], ps = s.Protect;
+  if (ps && ps.state === 'active') pills.push([ps.daysLeft <= 14 ? 'warn' : 'ok', t('🛡 Bảo hộ đến {d} (còn {n} ngày)', {d:ps.until, n:ps.daysLeft})]);
+  else if (ps && ps.state === 'expired' && status === 'Approved') pills.push(['bad', t('Hết bảo hộ ({d})', {d:ps.until})]);
+  if (s.ExtendRequested) pills.push(['warn', t('Đã gửi yêu cầu gia hạn bảo hộ')]);
+  if (pills.length) left.appendChild(H('<div style="margin-top:4px;">' + pillsHTML(pills) + '</div>'));
+  if (status === 'NeedInfo') card.insertBefore(H('<div class="msg bad">' + esc(t('EAVN cần bổ sung thông tin: {note}', {note:s.GhiChuNoiBo || ''})) + ' — ' + esc(t('Hãy chỉnh sửa dự án hoặc trả lời trong phần bình luận bên dưới.')) + '</div>'), left.parentElement.nextSibling);
+  if (s.UnderConflictReview) card.insertBefore(H('<div class="msg bad">' + esc(t('Dự án đang được EAVN xem xét do có đăng ký tương tự. EAVN sẽ liên hệ nếu cần thêm thông tin.')) + '</div>'), left.parentElement.nextSibling);
+  if (status === 'Approved' && !s.ExtendRequested && ps && (ps.state === 'expired' || ps.daysLeft <= 30)){
+    const b = document.createElement('button'); b.className = 'btn-ghost btn-sm'; b.style.cssText = 'margin-top:6px;display:block;'; b.textContent = t('🛡 Yêu cầu gia hạn bảo hộ');
+    b.onclick = async ()=>{
+      const note = prompt(t('Ghi chú cho EAVN (ví dụ: tình trạng dự án)'), ''); if (note === null) return;
+      try{ const r = await apiA({action:'requestExtension', id:s.ID, note:note}); if (r.ok){ await loadMine(); vendorMsg('mineMsg', t('Đã gửi yêu cầu gia hạn bảo hộ cho EAVN.'), 'ok'); } else alert(te(r.error) || t('Gửi thất bại.')); }catch(e){}
+    };
+    right.appendChild(b);
+  }
+  const cb = document.createElement('button'); cb.className = 'btn-ghost btn-sm'; cb.style.cssText = 'margin-top:6px;display:block;'; cb.textContent = t('📄 Nhân bản'); cb.onclick = ()=>cloneProject(s.ID);
+  right.appendChild(cb);
+}
+
+// Nhân bản dự án cũ thành bản nháp đăng ký mới (ví dụ phase 2, khách hàng cũ).
+function cloneProject(id){
+  const s = mineRows.find(x=>x.ID === id); if (!s) return;
+  const set = (k, v)=>{ document.getElementById(k).value = v === undefined || v === null ? '' : v; };
+  if (!document.getElementById('f_company').value) set('f_company', s.CongTyDoiTac);
+  if (!document.getElementById('f_contact').value) set('f_contact', s.NguoiDangKy);
+  set('f_customer', s.KhachHangCuoi); set('f_taxcode', s.MaSoThue); set('f_euaddr', s.DiaChiKhachHang); set('f_project', (s.TenDuAn || '') + ' ' + t('(bản sao)'));
+  set('f_desc', s.MoTa); set('f_value', groupDigits(s.GiaTriUocTinh)); set('f_close', ''); set('f_competitor', s.DoiThu);
+  document.getElementById('f_euaddr').dataset.auto = '0';
+  fillIndustry('f', s.Nganh); resetLines('lineItems', parseLines(s));
+  showView('form');
+  document.getElementById('formMsg').innerHTML = '<div class="msg ok">' + esc(t('Đã nhân bản từ {id}. Kiểm tra lại thông tin rồi gửi đăng ký.', {id:id})) + '</div>';
+  checkDup();
+}
+
+// Thẻ "Công ty của tôi": bảng điểm + MDF (chỉ hiện khi tài khoản thuộc một công ty đối tác).
+async function loadCompanyCard(){
+  const box = document.getElementById('companyCard'); if (!box) return;
+  try{
+    const [s, m] = await Promise.all([apiA({action:'partnerStats'}), apiA({action:'listMdf'})]);
+    if (!s.ok || !s.rows.length){ box.innerHTML = ''; return; }
+    const p = s.rows[0];
+    let h = '<div class="subcard"><b>' + esc(p.Name) + '</b> ' + tierPill(p.Tier, false) + '<div class="kpis">' + kpi(t('Dự án'), p.Total) + kpi(t('Đã thắng (Won)'), p.Won) + kpi(t('Tỷ lệ thắng'), p.WinRate + '%') + kpi(t('Giá trị đã thắng (ước tính)'), fmtMoney(p.WonValue)) + '</div>';
+    if (m.ok && !m.noCompany){
+      h += '<b>MDF</b><div class="kpis">' + kpi(t('Số dư MDF'), fmtMoney(m.balance.balance)) + kpi(t('Yêu cầu chờ duyệt'), fmtMoney(m.balance.pending)) + '</div>' +
+        '<div class="row"><div><label>' + esc(t('Số tiền (VNĐ)')) + '</label><input id="mcAmount" inputmode="numeric"></div><div><label>' + esc(t('Tham chiếu')) + '</label><input id="mcRef"></div></div><label>' + esc(t('Mô tả')) + '</label><input id="mcDesc">' +
+        '<button class="btn-primary btn-sm" style="margin-top:8px;" onclick="sendMdfClaim()">' + esc(t('Gửi yêu cầu chi MDF')) + '</button><div id="mcMsg" data-noi18n></div>';
+      if (m.rows.length) h += '<div class="scrollx"><table class="lines-table"><thead><tr><th>' + esc(t('Thời gian')) + '</th><th>' + esc(t('Loại')) + '</th><th>' + esc(t('Số tiền (VNĐ)')) + '</th><th>' + esc(t('Tham chiếu')) + '</th><th>' + esc(t('Trạng thái')) + '</th></tr></thead><tbody>' +
+        m.rows.map(x=>'<tr><td>' + esc(x.Time) + '</td><td>' + esc(t(MDF_TYPE[x.Type] || x.Type)) + '</td><td>' + esc(fmtMoney(x.Amount)) + '</td><td>' + esc(x.Ref) + '</td><td>' + esc(x.Status) + '</td></tr>').join('') + '</tbody></table></div>';
+    }
+    box.innerHTML = h + '</div>';
+  }catch(e){}
+}
+async function sendMdfClaim(){
+  try{
+    const r = await apiA({action:'requestMdfClaim', amount:rawDigits(document.getElementById('mcAmount').value), ref:document.getElementById('mcRef').value, desc:document.getElementById('mcDesc').value});
+    if (r.ok){ await loadCompanyCard(); vendorMsg('mcMsg', t('Đã gửi yêu cầu. EAVN sẽ xử lý và báo lại bằng email.'), 'ok'); } else vendorMsg('mcMsg', te(r.error) || t('Gửi thất bại.'));
+  }catch(e){ vendorMsg('mcMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+
+// ====== TRỢ LÝ BOQ (AI) + BẢN NHÁP TỰ LƯU CHO FORM ĐĂNG KÝ ======
+let aiEnabled = false, aiItems = [];
+async function loadAiStatus(){
+  try{ const r = await apiA({action:'aiStatus'}); aiEnabled = !!(r.ok && r.enabled); }catch(e){ aiEnabled = false; }
+  const box = document.getElementById('aiBox'); if (box) box.style.display = aiEnabled ? '' : 'none';
+}
+function aiReadFile(ev){
+  const f = ev.target.files && ev.target.files[0]; if (!f || typeof XLSX === 'undefined') return;
+  const rd = new FileReader();
+  rd.onload = e=>{
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+      document.getElementById('aiText').value = aoa.map(r=>r.map(x=>String(x).trim()).filter(Boolean).join(' | ')).filter(Boolean).join('\n');
+    }catch(err){ vendorMsg('aiMsg', t('Không đọc được file. Hãy dùng file Excel (.xlsx) hoặc CSV có 2 cột: Model và Giá nhập.')); }
+  };
+  rd.readAsArrayBuffer(f);
+}
+async function aiSuggest(){
+  const text = document.getElementById('aiText').value.trim();
+  if (!text){ vendorMsg('aiMsg', t('Vui lòng dán nội dung BOQ.')); return; }
+  if (!document.getElementById('aiConsent').checked){ vendorMsg('aiMsg', t('Bạn cần đồng ý gửi nội dung BOQ tới dịch vụ AI để dùng tính năng này.')); return; }
+  vendorMsg('aiMsg', t('AI đang phân tích BOQ…'), 'ok'); document.getElementById('aiResult').innerHTML = '';
+  try{
+    const r = await apiA({action:'boqSuggest', text:text, consentAI:true});
+    if (!r.ok){ vendorMsg('aiMsg', te(r.error) || t('Gửi thất bại.')); return; }
+    aiItems = r.items; vendorMsg('aiMsg', '');
+    renderAiResult();
+  }catch(e){ vendorMsg('aiMsg', t('Lỗi kết nối tới hệ thống.')); }
+}
+function renderAiResult(){
+  const box = document.getElementById('aiResult');
+  const CONF = {high:'ok', medium:'warn', low:'bad'};
+  let h = '<div class="hint">' + esc(t('Đây chỉ là gợi ý của AI. Hãy kiểm tra thông số trong datasheet trước khi đăng ký; các cảnh báo bên dưới cần được xem kỹ.')) + '</div><div class="scrollx"><table class="lines-table"><thead><tr><th></th><th>' + esc(t('Dòng BOQ')) + '</th><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Độ tin cậy')) + '</th><th>' + esc(t('Lý do và cảnh báo')) + '</th></tr></thead><tbody>';
+  aiItems.forEach((it, i)=>{
+    h += '<tr><td>' + (it.model ? '<input type="checkbox" class="ai-chk" data-i="' + i + '" checked style="width:auto">' : '') + '</td><td>' + esc(it.boq) + '</td><td>' + (it.model ? '<b>' + esc(it.model) + '</b>' : '<span class="pill bad">' + esc(t('Không có model phù hợp')) + '</span>') + '</td><td>' +
+      (it.model ? '<input type="number" min="1" class="ai-qty" data-i="' + i + '" value="' + it.qty + '" style="width:80px">' : '') + '</td><td><span class="pill ' + (CONF[it.confidence] || '') + '">' + esc(t('conf_' + it.confidence)) + '</span></td><td>' + esc(it.reason) +
+      it.caveats.map(c=>'<br><span class="pill warn" style="white-space:normal">⚠ ' + esc(c) + '</span>').join('') + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  if (aiItems.some(x=>x.model)){
+    h += '<div class="toolbar" style="margin-top:8px;"><select id="aiTarget" data-noi18n style="width:auto;"></select><button class="btn-primary btn-sm" onclick="aiAddToProject()">' + esc(t('Thêm các dòng đã chọn vào dự án')) + '</button></div>';
+  }
+  box.innerHTML = h;
+  const sel = document.getElementById('aiTarget');
+  if (sel){
+    document.querySelectorAll('#lineItems .opt-group').forEach(g=>{ const o = document.createElement('option'); o.value = g.dataset.opt; o.textContent = t('Phương án {n}', {n:g.dataset.opt}); sel.appendChild(o); });
+    if (document.querySelectorAll('#lineItems .opt-group').length < MAX_OPTIONS){ const o = document.createElement('option'); o.value = 'new'; o.textContent = t('+ Thêm phương án'); sel.appendChild(o); }
+  }
+}
+function aiAddToProject(){
+  const sel = document.getElementById('aiTarget'); if (!sel) return;
+  let group;
+  if (sel.value === 'new') group = addOption('lineItems', false);
+  else group = document.querySelector('#lineItems .opt-group[data-opt="' + sel.value + '"]');
+  if (!group) return;
+  const lines = group.querySelectorAll('.line-item');
+  if (lines.length === 1 && !lines[0].querySelector('.li-model').value) lines[0].remove();
+  let n = 0;
+  document.querySelectorAll('.ai-chk').forEach(c=>{
+    if (!c.checked) return;
+    const it = aiItems[parseInt(c.dataset.i, 10)], q = document.querySelector('.ai-qty[data-i="' + c.dataset.i + '"]');
+    addLine(it.model, q ? q.value : it.qty, group); n++;
+  });
+  if (!group.querySelector('.line-item')) addLine('', '', group);
+  updateOptTitles(document.getElementById('lineItems'));
+  vendorMsg('aiMsg', t('Đã thêm {n} dòng vào dự án. Hãy kiểm tra lại số lượng trước khi gửi đăng ký.', {n:n}), 'ok');
+}
+
+// ---- Bản nháp tự lưu (chỉ trên trình duyệt này, xoá khi gửi thành công hoặc khi đăng xuất) ----
+const DRAFT_FIELDS = ['f_company','f_contact','f_customer','f_taxcode','f_euaddr','f_project','f_desc','f_value','f_close','f_competitor','f_address'];
+let draftTimer = null;
+function draftKey(){ return 'pbs_draft_' + (session ? session.email : ''); }
+function draftSave(){
+  if (!session || session.role === 'Vendor') return;
+  try{
+    const o = {}; DRAFT_FIELDS.forEach(k=>{ o[k] = document.getElementById(k).value; });
+    o.industry = industryValue('f'); o.lines = readLines('lineItems'); o.lat = selectedLat; o.lng = selectedLng; o.savedAt = new Date().toISOString();
+    const has = DRAFT_FIELDS.some(k=>o[k] && k !== 'f_company' && k !== 'f_contact') || o.lines.length;
+    if (has) localStorage.setItem(draftKey(), JSON.stringify(o)); else localStorage.removeItem(draftKey());
+  }catch(e){}
+}
+function draftSchedule(){ clearTimeout(draftTimer); draftTimer = setTimeout(draftSave, 700); }
+function draftClear(){ try{ localStorage.removeItem(draftKey()); }catch(e){} const b = document.getElementById('draftBanner'); if (b) b.innerHTML = ''; }
+function draftCheck(){
+  const b = document.getElementById('draftBanner'); if (!b || !session) return;
+  b.innerHTML = '';
+  let d = null; try{ d = JSON.parse(localStorage.getItem(draftKey()) || 'null'); }catch(e){}
+  if (!d) return;
+  if (['f_customer','f_project','f_taxcode'].some(k=>document.getElementById(k).value.trim())) return;
+  b.innerHTML = '<div class="msg ok">' + esc(t('Có bản nháp chưa gửi (lưu lúc {time}).', {time:String(d.savedAt || '').slice(0, 16).replace('T', ' ')})) + ' <button class="btn-primary btn-sm" onclick="draftRestore()">' + esc(t('Khôi phục')) + '</button> <button class="btn-ghost btn-sm" onclick="draftDiscard()">' + esc(t('Xoá bản nháp')) + '</button></div>';
+}
+function draftRestore(){
+  let d = null; try{ d = JSON.parse(localStorage.getItem(draftKey()) || 'null'); }catch(e){}
+  if (!d) return;
+  DRAFT_FIELDS.forEach(k=>{ if (d[k]) document.getElementById(k).value = d[k]; });
+  document.getElementById('f_value').value = groupDigits(d.f_value);
+  fillIndustry('f', d.industry); resetLines('lineItems', d.lines);
+  if (d.lat !== null && d.lat !== undefined){ selectedLat = d.lat; selectedLng = d.lng; }
+  document.getElementById('draftBanner').innerHTML = '';
+}
+function draftDiscard(){ draftClear(); }
+document.addEventListener('input', e=>{ if (e.target.closest && e.target.closest('#viewForm')) draftSchedule(); });
+document.addEventListener('change', e=>{ if (e.target.closest && e.target.closest('#viewForm')) draftSchedule(); });
+
+// ---- Người dùng: gắn công ty đối tác ----
+function fillCompanySelect(sel, current){
+  sel.innerHTML = '';
+  const o0 = document.createElement('option'); o0.value = ''; o0.textContent = t('— Không thuộc công ty nào'); sel.appendChild(o0);
+  companiesRows.filter(c=>c.Status !== 'inactive' || c.CompanyID === current).forEach(c=>{ const o = document.createElement('option'); o.value = c.CompanyID; o.textContent = c.Name; if (c.CompanyID === current) o.selected = true; sel.appendChild(o); });
 }
 
 // ====== TIỆN ÍCH GIAO DIỆN: ngành, số tiền, tìm kiếm ======
@@ -1343,16 +2610,18 @@ async function searchAddress(){
 }
 
 async function checkDup(){
-  const taxcode = document.getElementById('f_taxcode').value.trim();
+  const taxcode = document.getElementById('f_taxcode').value.trim(), customer = document.getElementById('f_customer').value.trim();
   const warnEl = document.getElementById('dupWarning');
-  if (!taxcode && selectedLat===null){ warnEl.innerHTML=''; return; }
+  if (!taxcode && !customer && selectedLat===null){ warnEl.innerHTML=''; return; }
   try{
-    const r = await api({action:'checkDuplicate', taxcode, lat:selectedLat, lng:selectedLng});
+    const r = await api({action:'checkDuplicate', email:session.email, token:session.token, taxcode, customer, lat:selectedLat, lng:selectedLng});
     if (r.ok && r.duplicate){
       let m;
-      if (r.status && r.reason === 'taxcode') m = t('Mã số thuế khách hàng này đã có dự án được đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.', {st: statusLabel(r.status)});
-      else if (r.status && r.reason === 'location') m = t('Vị trí triển khai này rất gần một dự án đã đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.', {st: statusLabel(r.status)});
-      else m = r.message;
+      if (r.reason === 'own') m = t('Bạn (hoặc công ty của bạn) đã đăng ký dự án cho khách hàng này: {id} (trạng thái: {st}). Hãy kiểm tra trước khi đăng ký thêm.', {id:r.ownId, st:statusLabel(r.status)});
+      else if (r.reason === 'taxcode' && r.protectedActive) m = t('Khách hàng này đã có dự án được đăng ký và đang được bảo hộ. Dự án của bạn vẫn được ghi nhận nhưng sẽ được EAVN xem xét kỹ; vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.');
+      else if (r.reason === 'taxcode') m = t('Mã số thuế khách hàng này đã có dự án được đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.', {st: statusLabel(r.status)});
+      else if (r.reason === 'name') m = t('Đã có dự án cho khách hàng có tên tương tự. Dự án của bạn vẫn được ghi nhận nhưng sẽ được EAVN xem xét kỹ.');
+      else m = t('Vị trí triển khai này rất gần một dự án đã đăng ký trước đó (trạng thái: {st}). Vui lòng liên hệ EAVN để xác nhận trước khi tiếp tục.', {st: statusLabel(r.status)});
       warnEl.innerHTML = '<div class="msg bad">⚠️ ' + esc(m) + '</div>';
     }else warnEl.innerHTML = '';
   }catch(e){}
@@ -1372,8 +2641,7 @@ async function requestOtp(isResend, intent){
     if (r.ok){
       pendingEmail = email;
       document.getElementById('otpEmailShown').textContent = email;
-      document.getElementById('stepEmail').style.display='none';
-      document.getElementById('stepOtp').style.display='';
+      showLoginStep('stepOtp');
       msg.innerHTML = isResend ? '<div class="msg ok">' + t('Đã gửi lại mã mới.') + '</div>' : '';
       startResendCooldown();
     }else{
@@ -1398,8 +2666,7 @@ function startResendCooldown(){
 }
 
 function backToEmail(){
-  document.getElementById('stepOtp').style.display='none';
-  document.getElementById('stepEmail').style.display='';
+  showLoginStep('stepEmail');
   document.getElementById('loginMsg').innerHTML='';
 }
 
@@ -1411,16 +2678,16 @@ async function verifyOtp(){
   try{
     const r = await api({action:'verifyOtp', email:pendingEmail, otp});
     if (r.ok){
-      session = {email:pendingEmail, token:r.token, role:r.role, name:r.name};
-      sessionStorage.setItem('pbs_session', JSON.stringify(session));
-      enterApp(pendingIntent);
+      if (r.needTotp){ showTotpStep(r.ticket); return; }
+      if (r.needEnroll){ showEnrollStep(r); return; }
+      completeLogin(r);
     }else{
       msg.innerHTML = `<div class="msg bad">${esc(te(r.error) || t('Mã không đúng.'))}</div>`;
     }
   }catch(e){ msg.innerHTML = '<div class="msg bad">' + t('Lỗi kết nối tới hệ thống.') + '</div>'; }
 }
 
-function logout(){ sessionStorage.removeItem('pbs_session'); session=null; location.reload(); }
+function logout(){ draftClear(); sessionStorage.removeItem('pbs_session'); session=null; location.reload(); }
 
 function enterApp(landOn){
   document.getElementById('loginScreen').style.display='none';
@@ -1429,10 +2696,10 @@ function enterApp(landOn){
   document.getElementById('whoami').textContent = session.name ? `${session.name} (${session.email})` : session.email;
   const isV = session.role === 'Vendor', isA = session.role === 'Admin';
   const show = (id, on)=>{ document.getElementById(id).style.display = on ? '' : 'none'; };
-  show('tabForm', !isV); show('tabMine', !isV); show('tabAdmin', isA); show('tabSettings', isA); show('tabVendor', isV); show('tabCn', isV || isA);
+  show('tabForm', !isV); show('tabMine', !isV); show('tabAdmin', isA); show('tabSettings', isA); show('tabVendor', isV); show('tabCn', isV || isA); show('tabDash', isV || isA); show('tabConf', isA); show('tabPart', isA);
   if (!document.getElementById('lineItems').children.length) addLine();
-  fillFilters();
-  if (!isV) loadCatalog();
+  fillFilters(); fillAdminFilter();
+  if (!isV){ loadCatalog(); loadAiStatus(); }
   let land = isV ? 'vendor' : (landOn === 'vendor' || landOn === 'cn' || landOn === 'settings' ? 'form' : (landOn || 'form'));
   if (isA && location.hash === '#admin') land = 'admin'; // link trong email: ...#admin mở thẳng trang quản trị
   else if (!isV && location.hash === '#mine') land = 'mine'; // link trong email gửi đại lý: ...#mine
@@ -1440,7 +2707,7 @@ function enterApp(landOn){
 }
 
 function showView(v){
-  ['form','mine','admin','vendor','cn','settings'].forEach(x=>{
+  ['form','mine','admin','vendor','cn','settings','dash','conf','part'].forEach(x=>{
     document.getElementById('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active', v===x);
     document.getElementById('view'+x[0].toUpperCase()+x.slice(1)).style.display = v===x ? '' : 'none';
   });
@@ -1450,6 +2717,10 @@ function showView(v){
   if (v==='vendor') loadVendor();
   if (v==='cn') loadCn();
   if (v==='settings') loadSettings();
+  if (v==='form') draftCheck();
+  if (v==='dash') loadDash();
+  if (v==='conf') loadConf();
+  if (v==='part') loadPart();
 }
 
 // ====== Dữ liệu dùng chung cho Admin + Dự án của tôi ======
@@ -1469,7 +2740,7 @@ function duplicateTaxcodes(rows){
 async function loadSubmissions(){
   try{
     const r = await api({action:'list', email:session.email, token:session.token});
-    if (r.ok){ allSubs = r.rows; await loadSellCols(); renderAdminList(allSubs); }
+    if (r.ok){ allSubs = r.rows; await loadSellCols(); await loadAdminEmails(); renderAdminList(allSubs); }
   }catch(e){}
 }
 
@@ -1521,7 +2792,7 @@ function exportExcel(){
 async function loadMine(){
   try{
     const r = await api({action:'listMine', email:session.email, token:session.token});
-    if (r.ok){ mineRows = r.rows; renderMineList(mineRows); }
+    if (r.ok){ mineRows = r.rows; renderMineList(mineRows); loadCompanyCard(); }
   }catch(e){}
 }
 
@@ -1594,13 +2865,14 @@ async function doSubmit(){
       msg.innerHTML = '<div class="msg ok">' + esc((r.id ? '[' + r.id + '] ' : '') + (r.emailSent
         ? t('Đã gửi đăng ký thành công và email xác nhận đã gửi tới hộp thư của bạn. EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.')
         : t('Đã gửi đăng ký thành công (email xác nhận không gửi được{err}, nhưng dự án đã được ghi nhận). EAVN sẽ xem xét và cập nhật trạng thái, giá & % rebate.', {err: r.emailError ? ': ' + r.emailError : ''}))) + '</div>';
+      if (r.conflict) msg.innerHTML += '<div class="msg bad">' + esc(t('Dự án đang được EAVN xem xét do có đăng ký tương tự. EAVN sẽ liên hệ nếu cần thêm thông tin.')) + '</div>';
       ['f_company','f_contact','f_customer','f_taxcode','f_euaddr','f_project','f_desc','f_value','f_close','f_competitor','addrSearch','f_address'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('f_euaddr').dataset.auto = '';
       fillIndustry('f', ''); setTaxHint('');
       resetLines('lineItems');
       document.getElementById('dupWarning').innerHTML='';
       selectedLat=null; selectedLng=null;
-      clearMarker();
+      clearMarker(); draftClear();
     }else{
       msg.innerHTML = `<div class="msg bad">${esc(te(r.error) || t('Gửi thất bại.'))}</div>`;
     }
@@ -1608,37 +2880,40 @@ async function doSubmit(){
 }
 
 // ====== CHÍNH SÁCH BẢO MẬT & AN TOÀN THÔNG TIN (khách hàng đồng ý trước khi đăng ký) ======
-const POLICY_VERSION = '2026-10-v1'; // phải trùng POLICY_VERSION trong Code.gs; đổi khi sửa nội dung để khách đồng ý lại
+const POLICY_VERSION = '2026-11-v2'; // phải trùng POLICY_VERSION trong Code.gs; đổi khi sửa nội dung để khách đồng ý lại
 const POLICY = {
   vi: [
-    ['Mục đích', 'Hệ thống Project Booking System (PBS) do EAVN vận hành để tiếp nhận đăng ký dự án của đối tác phân phối sản phẩm Aurcore, kiểm tra trùng lặp dự án và theo dõi quá trình xét duyệt, báo giá, hỗ trợ.'],
-    ['Thông tin được thu thập', 'Thông tin đối tác (tên công ty, người đăng ký, email đăng nhập); thông tin khách hàng cuối (tên, mã số thuế, địa chỉ, ngành); thông tin dự án (mô tả, giá trị ước tính, ngày dự kiến chốt, đối thủ, sản phẩm và số lượng, vị trí triển khai nếu có); nhật ký truy cập và hoạt động trên hệ thống.'],
-    ['Mục đích sử dụng', 'Xử lý đăng ký, đối chiếu mã số thuế và vị trí để tránh trùng dự án, báo giá, tính hỗ trợ rebate, liên hệ và gửi nhắc nhở liên quan đến dự án.'],
-    ['Chia sẻ thông tin', 'Thông tin dự án được chia sẻ cho EAVN và Aurcore Networks (nhà sản xuất) để xét hỗ trợ cho dự án. Aurcore chỉ thấy tên công ty và người đăng ký, không thấy email, số điện thoại của bạn và không thấy giá bán EAVN báo cho khách hàng. Dữ liệu được lưu và xử lý trên dịch vụ của Google (Google Sheets, Apps Script) và dịch vụ gửi email. EAVN không bán dữ liệu cho bên thứ ba.'],
-    ['Trách nhiệm của đối tác', 'Bạn cam kết có quyền hợp pháp cung cấp thông tin về khách hàng cuối, thông tin cung cấp là chính xác, không đưa vào dữ liệu cá nhân không cần thiết hoặc nhạy cảm, giữ bí mật tài khoản và mã OTP, và không tiết lộ báo giá, mức rebate cho bên không liên quan.'],
-    ['An toàn thông tin', 'Hệ thống dùng xác thực email bằng mã OTP, phân quyền theo vai trò (Admin, Vendor, đại lý), truyền dữ liệu qua kết nối mã hoá HTTPS và ghi nhật ký hoạt động để theo dõi thay đổi. EAVN áp dụng các biện pháp bảo vệ hợp lý; tuy nhiên không hệ thống nào an toàn tuyệt đối. Khi xảy ra sự cố ảnh hưởng đến dữ liệu, EAVN sẽ xử lý và thông báo theo quy định pháp luật.'],
+    ['Mục đích', 'Hệ thống Project Booking System (PBS) do EAVN vận hành để tiếp nhận đăng ký dự án của đối tác phân phối sản phẩm Aurcore, kiểm tra trùng lặp dự án, bảo hộ dự án và theo dõi quá trình xét duyệt, báo giá, hỗ trợ, rebate và quỹ phát triển thị trường (MDF).'],
+    ['Thông tin được thu thập', 'Thông tin đối tác (tên công ty, người đăng ký, email đăng nhập, thành viên cùng công ty); thông tin khách hàng cuối (tên, mã số thuế, địa chỉ, ngành); thông tin dự án (mô tả, giá trị ước tính, ngày dự kiến chốt, đối thủ, sản phẩm và số lượng, vị trí triển khai nếu có); bình luận, tài liệu đính kèm (ví dụ BOQ, RFP, PO); nhật ký truy cập và hoạt động trên hệ thống.'],
+    ['Mục đích sử dụng', 'Xử lý đăng ký, đối chiếu mã số thuế và tên khách hàng để tránh trùng dự án, báo giá, tính hỗ trợ rebate, trao đổi về dự án, gửi nhắc nhở và thống kê hiệu quả hợp tác.'],
+    ['Chia sẻ thông tin', 'Thông tin dự án được chia sẻ cho EAVN và Aurcore Networks (nhà sản xuất) để xét hỗ trợ cho dự án. Aurcore chỉ thấy tên công ty và người đăng ký, không thấy email, số điện thoại của bạn và không thấy giá bán EAVN báo cho khách hàng. Tài liệu đính kèm lưu trong Google Drive của EAVN và chỉ hiển thị cho đúng người được phân quyền. Dữ liệu được lưu và xử lý trên dịch vụ của Google (Google Sheets, Apps Script, Drive) và dịch vụ gửi email. EAVN không bán dữ liệu cho bên thứ ba.'],
+    ['Trợ lý AI (tuỳ chọn)', 'Chỉ khi bạn chủ động dùng "Trợ lý BOQ" và đồng ý, nội dung BOQ bạn dán hoặc tải lên được gửi tới dịch vụ AI của Anthropic để gợi ý model. Vui lòng không đưa thông tin cá nhân hoặc bí mật không cần thiết vào BOQ. Kết quả chỉ là gợi ý và cần được bạn kiểm tra.'],
+    ['Trách nhiệm của đối tác', 'Bạn cam kết có quyền hợp pháp cung cấp thông tin về khách hàng cuối, thông tin cung cấp là chính xác, không đưa vào dữ liệu cá nhân không cần thiết hoặc nhạy cảm (kể cả trong tài liệu đính kèm), giữ bí mật tài khoản và mã OTP, và không tiết lộ báo giá, mức rebate cho bên không liên quan.'],
+    ['An toàn thông tin', 'Hệ thống dùng xác thực email bằng mã OTP (giới hạn số lần thử), xác thực 2 bước cho Admin, phân quyền theo vai trò (Admin, Vendor, đại lý), truyền dữ liệu qua kết nối mã hoá HTTPS, sao lưu định kỳ và ghi nhật ký hoạt động để theo dõi thay đổi. EAVN áp dụng các biện pháp bảo vệ hợp lý; tuy nhiên không hệ thống nào an toàn tuyệt đối. Khi xảy ra sự cố ảnh hưởng đến dữ liệu, EAVN sẽ xử lý và thông báo theo quy định pháp luật.'],
     ['Thời gian lưu trữ', 'Dữ liệu được lưu trong thời gian cần thiết cho các mục đích nêu trên và theo yêu cầu của pháp luật, hợp đồng; sau đó sẽ được xoá hoặc ẩn danh.'],
     ['Quyền của bạn', 'Bạn có thể xem và chỉnh sửa dự án đã đăng ký trong hệ thống, hoặc yêu cầu truy cập, chỉnh sửa, xoá dữ liệu và rút lại đồng ý bằng cách liên hệ {contact}, theo quy định pháp luật Việt Nam về bảo vệ dữ liệu cá nhân hiện hành.'],
     ['Đồng ý', 'Khi bấm "Đồng ý và gửi đăng ký", bạn xác nhận đã đọc, hiểu và đồng ý với chính sách này. Hệ thống ghi lại phiên bản chính sách ({version}) và thời điểm đồng ý cùng với dự án.']
   ],
   en: [
-    ['Purpose', 'The Project Booking System (PBS) is operated by EAVN to receive project registrations from partners distributing Aurcore products, to detect duplicate projects, and to track review, quotation and support.'],
-    ['Information collected', 'Partner information (company name, registrant, login email); end-customer information (name, tax code, address, industry); project information (description, estimated value, expected closing date, competitors, products and quantities, deployment location if provided); access and activity logs.'],
-    ['How it is used', 'To process registrations, match tax codes and locations to avoid duplicate projects, prepare quotations, calculate rebate support, and contact you or send reminders about the project.'],
-    ['Sharing', 'Project information is shared with EAVN and Aurcore Networks (the manufacturer) to assess support for the project. Aurcore sees only your company name and registrant, not your email or phone number, and not the selling prices EAVN quotes to customers. Data is stored and processed on Google services (Google Sheets, Apps Script) and an email delivery service. EAVN does not sell data to third parties.'],
-    ['Partner responsibilities', 'You confirm that you are legally entitled to provide the end-customer information, that it is accurate, that you will not enter unnecessary or sensitive personal data, that you will keep your account and OTP codes confidential, and that you will not disclose quotations or rebate levels to unrelated parties.'],
-    ['Information security', 'The system uses email OTP authentication, role-based access (Admin, Vendor, partner), encrypted HTTPS connections and an activity log to track changes. EAVN applies reasonable safeguards; however, no system is absolutely secure. If an incident affects data, EAVN will handle it and notify as required by law.'],
+    ['Purpose', 'The Project Booking System (PBS) is operated by EAVN to receive project registrations from partners distributing Aurcore products, to detect duplicate projects, to protect registered projects, and to track review, quotation, support, rebates and market development funds (MDF).'],
+    ['Information collected', 'Partner information (company name, registrant, login email, colleagues in the same company); end-customer information (name, tax code, address, industry); project information (description, estimated value, expected closing date, competitors, products and quantities, deployment location if provided); comments and attached documents (for example BOQ, RFP, PO); access and activity logs.'],
+    ['How it is used', 'To process registrations, match tax codes and customer names to avoid duplicate projects, prepare quotations, calculate rebate support, discuss projects, send reminders and measure the results of the cooperation.'],
+    ['Sharing', 'Project information is shared with EAVN and Aurcore Networks (the manufacturer) to assess support for the project. Aurcore sees only your company name and registrant, not your email or phone number, and not the selling prices EAVN quotes to customers. Attached documents are stored in EAVN\'s Google Drive and are visible only to the people authorised for them. Data is stored and processed on Google services (Google Sheets, Apps Script, Drive) and an email delivery service. EAVN does not sell data to third parties.'],
+    ['AI assistant (optional)', 'Only when you choose to use the "BOQ assistant" and agree, the BOQ text you paste or upload is sent to Anthropic\'s AI service to suggest models. Please do not put personal or unnecessary confidential information in the BOQ. The result is only a suggestion that you must check.'],
+    ['Partner responsibilities', 'You confirm that you are legally entitled to provide the end-customer information, that it is accurate, that you will not enter unnecessary or sensitive personal data (including in attached documents), that you will keep your account and OTP codes confidential, and that you will not disclose quotations or rebate levels to unrelated parties.'],
+    ['Information security', 'The system uses email OTP authentication (with attempt limits), two-step verification for Admins, role-based access (Admin, Vendor, partner), encrypted HTTPS connections, regular backups and an activity log to track changes. EAVN applies reasonable safeguards; however, no system is absolutely secure. If an incident affects data, EAVN will handle it and notify as required by law.'],
     ['Retention', 'Data is kept for as long as needed for the purposes above and as required by law or contract, and is then deleted or anonymised.'],
     ['Your rights', 'You can view and edit your registered projects in the system, or request access, correction or deletion of data and withdraw your consent by contacting {contact}, in accordance with the personal data protection laws of Vietnam currently in force.'],
     ['Consent', 'By clicking "Agree and submit", you confirm that you have read, understood and agree to this policy. The system records the policy version ({version}) and the time of consent together with the project.']
   ],
   zh: [
-    ['目的', 'Project Booking System（PBS）由 EAVN 运营，用于接收分销 Aurcore 产品的合作伙伴的项目报备，检查重复项目，并跟踪审核、报价与支持。'],
-    ['收集的信息', '合作伙伴信息（公司名称、报备人、登录邮箱）；最终客户信息（名称、税号、地址、行业）；项目信息（描述、预计金额、预计成交日期、竞争对手、产品及数量、如有则含部署地点）；访问与操作日志。'],
-    ['使用目的', '处理报备、比对税号和地点以避免重复项目、报价、计算返利支持、联系您以及发送与项目相关的提醒。'],
-    ['信息共享', '项目信息会与 EAVN 和 Aurcore Networks（制造商）共享，以评估对项目的支持。Aurcore 仅能看到您的公司名称和报备人，看不到您的邮箱、电话，也看不到 EAVN 向客户报出的销售价格。数据存储和处理于 Google 服务（Google Sheets、Apps Script）及邮件发送服务。EAVN 不会向第三方出售数据。'],
-    ['合作伙伴责任', '您确认有合法权利提供最终客户信息，所提供信息准确，不录入不必要或敏感的个人数据，妥善保管账户和 OTP 验证码，并且不向无关方披露报价和返利水平。'],
-    ['信息安全', '系统采用邮箱 OTP 验证、基于角色的权限（Admin、厂商、经销商）、HTTPS 加密传输，并记录操作日志以跟踪变更。EAVN 采取合理的保护措施，但任何系统都不可能绝对安全。如发生影响数据的事件，EAVN 将按法律规定处理并通知。'],
+    ['目的', 'Project Booking System（PBS）由 EAVN 运营，用于接收分销 Aurcore 产品的合作伙伴的项目报备，检查重复项目、提供项目保护，并跟踪审核、报价、支持、返利以及市场发展基金（MDF）。'],
+    ['收集的信息', '合作伙伴信息（公司名称、报备人、登录邮箱、同公司同事）；最终客户信息（名称、税号、地址、行业）；项目信息（描述、预计金额、预计成交日期、竞争对手、产品及数量、如有则含部署地点）；评论、附件文档（例如 BOQ、RFP、PO）；访问与操作日志。'],
+    ['使用目的', '处理报备、比对税号和客户名称以避免重复项目、报价、计算返利支持、沟通项目、发送提醒并统计合作成效。'],
+    ['信息共享', '项目信息会与 EAVN 和 Aurcore Networks（制造商）共享，以评估对项目的支持。Aurcore 仅能看到您的公司名称和报备人，看不到您的邮箱、电话，也看不到 EAVN 向客户报出的销售价格。附件文档存储在 EAVN 的 Google Drive 中，仅对获授权的人员可见。数据存储和处理于 Google 服务（Google Sheets、Apps Script、Drive）及邮件发送服务。EAVN 不会向第三方出售数据。'],
+    ['AI 助手（可选）', '仅当您主动使用“BOQ 助手”并表示同意时，您粘贴或上传的 BOQ 内容才会发送到 Anthropic 的 AI 服务以获取型号建议。请勿在 BOQ 中放入个人信息或不必要的机密信息。结果仅为建议，需由您核实。'],
+    ['合作伙伴责任', '您确认有合法权利提供最终客户信息，所提供信息准确，不录入不必要或敏感的个人数据（包括附件文档中），妥善保管账户和 OTP 验证码，并且不向无关方披露报价和返利水平。'],
+    ['信息安全', '系统采用邮箱 OTP 验证（限制尝试次数）、Admin 两步验证、基于角色的权限（Admin、厂商、经销商）、HTTPS 加密传输、定期备份，并记录操作日志以跟踪变更。EAVN 采取合理的保护措施，但任何系统都不可能绝对安全。如发生影响数据的事件，EAVN 将按法律规定处理并通知。'],
     ['保存期限', '数据在上述目的所需期间以及法律或合同要求的期限内保存，之后将被删除或匿名化。'],
     ['您的权利', '您可以在系统中查看和修改已报备的项目，也可以联系 {contact} 要求查阅、更正、删除数据或撤回同意，具体依据越南现行的个人数据保护法律。'],
     ['同意', '点击“同意并提交报备”即表示您已阅读、理解并同意本政策。系统会将政策版本（{version}）和同意时间与项目一并记录。']
@@ -1722,7 +2997,7 @@ function renderAdminList(rows){
   const dupMap = duplicateTaxcodes(rows);
   const st = searchState('qAdmin');
   const list = document.getElementById('subList'); list.innerHTML='';
-  const shown = rows.slice().reverse().filter(s=>searchMatch(st.q, st.exact, hayAdmin(s)));
+  const shown = rows.slice().reverse().filter(s=>searchMatch(st.q, st.exact, hayAdmin(s)) && adminFilterMatch(s));
   setSearchCount('qAdmin', shown.length, rows.length);
   shown.forEach(s=>{
     const date = s.Timestamp ? new Date(s.Timestamp).toISOString().slice(0,10) : '';
@@ -1745,7 +3020,7 @@ function renderAdminList(rows){
       metaLines.map(m=>'<span class="meta">' + m + '</span>').join('<br>') + '</div><div></div></div>';
     const ctrlDiv = card.querySelector('.subcard-head > div:last-child');
     const sel = document.createElement('select');
-    ['Submitted','UnderReview','Approved','Rejected','Won','Lost'].forEach(opt=>{
+    ['Submitted','UnderReview','NeedInfo','Approved','Rejected','Won','Lost'].forEach(opt=>{
       const o=document.createElement('option'); o.value=opt; o.textContent=statusLabel(opt); if(status===opt) o.selected=true; sel.appendChild(o);
     });
     let wsel = null;
@@ -1763,10 +3038,11 @@ function renderAdminList(rows){
     const quoteMsg=document.createElement('div'); quoteMsg.className='hint';
     quoteBtn.onclick=()=>sendQuote(s.ID, quoteBtn, quoteMsg);
     ctrlDiv.appendChild(sel); if (wsel) ctrlDiv.appendChild(wsel); ctrlDiv.appendChild(noteInput); ctrlDiv.appendChild(quoteBtn); ctrlDiv.appendChild(quoteMsg);
+    adminExtras(s, card, ctrlDiv);
 
     if (!lines.length){
       const empty=document.createElement('div'); empty.className='hint'; empty.textContent = t('Dự án này chưa có model nào được ghi nhận.');
-      card.appendChild(empty); list.appendChild(card); return;
+      card.appendChild(empty); finalizeCard(list, card, s, 'admin'); return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
     tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Giá nhập')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Rebate Vendor (%)')) + '</th><th>' + esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th></tr></thead>';
@@ -1804,7 +3080,7 @@ function renderAdminList(rows){
     if (s.NgayWon) info.push(t('Ngày Won') + ': ' + String(s.NgayWon).slice(0,10));
     if (s.SoCN) info.push(t('Số CN') + ': ' + s.SoCN);
     if (info.length){ const d=document.createElement('div'); d.className='vtotal'; d.textContent = info.join('  ·  '); card.appendChild(d); }
-    list.appendChild(card);
+    finalizeCard(list, card, s, 'admin');
   });
 }
 
@@ -1840,6 +3116,7 @@ function renderMineList(rows){
     ].filter(Boolean);
     card.innerHTML = '<div class="subcard-head"><div><b>' + esc(s.TenDuAn) + '</b><br>' + meta.map(m=>'<span class="meta">' + m + '</span>').join('<br>') + '</div>' +
       '<div><span class="badge st-' + esc(status) + '">' + esc(statusLabel(status)) + '</span></div></div>';
+    mineExtras(s, card);
     if (FINAL_STATUS.indexOf(status) < 0){
       const eb = document.createElement('button'); eb.className = 'btn-ghost btn-sm'; eb.style.marginTop = '6px'; eb.style.display = 'block';
       eb.textContent = t('✏️ Chỉnh sửa'); eb.onclick = ()=>openEdit(s.ID);
@@ -1847,7 +3124,7 @@ function renderMineList(rows){
     }
     if (!lines.length){
       const empty=document.createElement('div'); empty.className='hint'; empty.textContent = t('Dự án này chưa có model nào được ghi nhận.');
-      card.appendChild(empty); list.appendChild(card); return;
+      card.appendChild(empty); finalizeCard(list, card, s, 'dealer'); return;
     }
     const tbl = document.createElement('table'); tbl.className='lines-table';
     tbl.innerHTML = '<thead><tr><th>Model</th><th>' + esc(t('SL')) + '</th><th>' + esc(t('Đơn giá (VNĐ, đã gồm VAT)')) + '</th><th>' + esc(t('% Rebate')) + '</th><th>' + esc(t('Giá sau rebate (VNĐ)')) + '</th><th>' + esc(t('Thành tiền sau rebate (VNĐ)')) + '</th></tr></thead>';
@@ -1881,7 +3158,7 @@ function renderMineList(rows){
       const n=document.createElement('div'); n.className='hint'; n.textContent=t('Ghi chú từ EAVN') + ': ' + s.GhiChuNoiBo;
       card.appendChild(n);
     }
-    list.appendChild(card);
+    finalizeCard(list, card, s, 'dealer');
   });
 }
 
@@ -1945,7 +3222,7 @@ async function runRemindersNow(){
 function fillFilters(){
   const vf = document.getElementById('vFilter'), cf = document.getElementById('cnFilter');
   vf.innerHTML = ''; cf.innerHTML = '';
-  [['all', t('Tất cả trạng thái')]].concat(['Submitted','UnderReview','Approved','Rejected','Won','Lost'].map(s=>[s, statusLabel(s)])).forEach(([v,l])=>{
+  [['all', t('Tất cả trạng thái')]].concat(['Submitted','UnderReview','NeedInfo','Approved','Rejected','Won','Lost'].map(s=>[s, statusLabel(s)])).forEach(([v,l])=>{
     const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === vFilterVal) o.selected = true; vf.appendChild(o);
   });
   [['all', t('Tất cả')], ['pending', t('Chưa chốt CN')], ['issued', t('Đã chốt CN')]].forEach(([v,l])=>{
@@ -1955,6 +3232,7 @@ function fillFilters(){
 
 function vendorMsg(id, text, cls){
   const el = document.getElementById(id);
+  if (!el) return;
   el.innerHTML = text ? '<div class="msg ' + (cls||'bad') + '">' + esc(text) + '</div>' : '';
 }
 
@@ -1990,6 +3268,7 @@ function renderVendorList(){
     meta.push(esc(t('Giá trị ước tính')) + ': ' + esc(groupDigits(s.GiaTriUocTinh)) + ' · ' + esc(t('Dự kiến chốt')) + ': ' + esc(s.NgayDuKienChot) + (s.DoiThu ? ' · ' + esc(t('Đối thủ')) + ': ' + esc(s.DoiThu) : ''));
     if (s.MoTa) meta.push(esc(t('Mô tả')) + ': ' + esc(s.MoTa));
     if (s.NgayWon) meta.push(esc(t('Ngày Won')) + ': ' + esc(s.NgayWon));
+    if (s.Actual) meta.push(esc(t('Đơn hàng thực tế')) + ': PO ' + esc(s.Actual.po || '-') + (s.Actual.poDate ? ' (' + esc(s.Actual.poDate) + ')' : '') + ' · ' + esc(t('Hoá đơn')) + ' ' + esc(s.Actual.invoice || '-') + (s.Actual.invoiceDate ? ' (' + esc(s.Actual.invoiceDate) + ')' : ''));
     card.innerHTML = '<div class="subcard-head"><div><b>' + esc(s.TenDuAn) + '</b><br>' +
       meta.map(m=>'<span class="meta">' + m + '</span>').join('<br>') + '</div>' +
       '<div><span class="badge st-' + esc(s.TrangThai) + '">' + esc(statusLabel(s.TrangThai)) + '</span></div></div>';
@@ -2017,7 +3296,7 @@ function renderVendorList(){
     s.Lines.forEach(ln=>{
       const tr = document.createElement('tr');
       const tdM = document.createElement('td'); tdM.textContent = optTag(ln, multi) + ln.model;
-      const tdQ = document.createElement('td'); tdQ.textContent = ln.qty;
+      const tdQ = document.createElement('td'); tdQ.textContent = ln.basis === 'actual' ? ln.qty + ' (' + t('đăng ký') + ': ' + ln.qtyReg + ')' : ln.qty;
       const tdIp = document.createElement('td');
       if (ln.ip !== '' && ln.ip !== undefined) tdIp.textContent = fmtVendor(ln.ip);
       else{ tdIp.className = 'hint'; tdIp.textContent = t('Chưa có giá nhập'); }
@@ -2050,7 +3329,7 @@ function renderVendorList(){
       };
       card.appendChild(btn); card.appendChild(msg);
     }
-    list.appendChild(card);
+    finalizeCard(list, card, s, 'vendor');
   });
 }
 
@@ -2080,14 +3359,14 @@ function renderCnList(){
   rows.forEach(r=>{ sum += r.RebateTotal; if (r.SoCN) sumIssued += r.RebateTotal; else sumPending += r.RebateTotal; });
   const tbl = document.createElement('table'); tbl.className = 'lines-table'; tbl.style.marginTop = '10px';
   tbl.innerHTML = '<thead><tr>' + (isA ? '<th></th>' : '') + '<th>' + esc(t('Ngày Won')) + '</th><th>' + esc(t('Dự án')) + '</th><th>' + esc(t('Đối tác')) + '</th><th>' + esc(t('Khách hàng')) + '</th><th>' +
-    esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Số CN')) + '</th></tr></thead>';
+    esc(t('Rebate Vendor')) + ' (' + esc(CONFIG.VENDOR_CCY) + ')</th><th>' + esc(t('Cơ sở tính')) + '</th><th>' + esc(t('Số CN')) + '</th></tr></thead>';
   const tb = document.createElement('tbody');
   rows.forEach(r=>{
     const tr = document.createElement('tr');
     let first = '';
     if (isA) first = r.SoCN ? '<td></td>' : '<td><input type="checkbox" class="cn-chk" value="' + esc(r.ID) + '" style="width:auto"></td>';
     tr.innerHTML = first + '<td>' + esc(r.NgayWon) + '</td><td>' + esc(r.TenDuAn) + '</td><td>' + esc(r.CongTyDoiTac) + '</td><td>' + esc(r.KhachHangCuoi) + '</td><td>' +
-      esc(fmtVendor(r.RebateTotal)) + '</td><td>' + esc(r.SoCN) + '</td>';
+      esc(fmtVendor(r.RebateTotal)) + '</td><td>' + (r.HasActual ? '<span class="pill ok">' + esc(t('Thực tế')) + '</span>' + esc(' PO ' + (r.Actual.po || '-') + (r.Actual.invoice ? ' · ' + t('Hoá đơn') + ' ' + r.Actual.invoice : '')) : '<span class="pill warn">' + esc(t('Số lượng đăng ký')) + '</span>') + '</td><td>' + esc(r.SoCN) + '</td>';
     tb.appendChild(tr);
   });
   tbl.appendChild(tb); box.appendChild(tbl);
@@ -2104,12 +3383,15 @@ async function issueCn(){
   const total = cnRows.filter(r=>ids.indexOf(r.ID) >= 0).reduce((s,r)=>s + r.RebateTotal, 0);
   if (!confirm(t('Chốt CN cho {n} dự án, tổng rebate {total}?', {n: ids.length, total: fmtVendor(total)}))) return;
   try{
-    const r = await api({action:'issueCN', email:session.email, token:session.token, ids, soCN: document.getElementById('cnNumber').value.trim()});
+    const r = await api({action:'issueCN', email:session.email, token:session.token, ids, soCN: document.getElementById('cnNumber').value.trim(), allowRegistered: document.getElementById('cnAllowReg').checked});
     if (r.ok){
       document.getElementById('cnNumber').value = '';
       await loadCn();
       vendorMsg('cnMsg', t('Đã chốt CN {no}: {n} dự án, tổng rebate {total}.', {no: r.soCN, n: r.count, total: fmtVendor(r.total)}), 'ok');
-    }else vendorMsg('cnMsg', te(r.error) || t('Gửi thất bại.'));
+    }else{
+      const m = /^Các dự án chưa có đơn hàng thực tế \(PO\/hoá đơn\): ([^.]*)\./.exec(r.error || '');
+      vendorMsg('cnMsg', m ? t('Các dự án chưa có đơn hàng thực tế: {ids}. Hãy nhập đơn hàng thực tế trong thẻ dự án (tab Quản trị), hoặc tick "Cho phép chốt theo số lượng đăng ký".', {ids:m[1]}) : (te(r.error) || t('Gửi thất bại.')));
+    }
   }catch(e){ vendorMsg('cnMsg', t('Lỗi kết nối tới hệ thống.')); }
 }
 
@@ -2318,6 +3600,8 @@ function fillRoleSelect(){
 
 async function loadSettings(){
   fillRoleSelect();
+  try{ const c = await apiA({action:'listCompanies'}); if (c.ok) companiesRows = c.rows; }catch(e){}
+  fillCompanySelect(document.getElementById('uCompany'), '');
   try{
     const r = await api({action:'listUsers', email:session.email, token:session.token});
     if (r.ok){ usersRows = r.rows; usersSelf = r.self; renderUsers(); }
@@ -2330,6 +3614,8 @@ async function loadSettings(){
   }catch(e){ vendorMsg('pricesMsg', t('Lỗi kết nối tới hệ thống.')); }
   loadLog();
   loadSell();
+  loadHealth();
+  load2fa();
 }
 
 function renderUsers(){
@@ -2337,7 +3623,7 @@ function renderUsers(){
   const order = ['Admin','Vendor','Partner'];
   const rows = usersRows.slice().sort((a,b)=> a.Role === b.Role ? a.Email.localeCompare(b.Email) : order.indexOf(a.Role) - order.indexOf(b.Role));
   const tbl = document.createElement('table'); tbl.className = 'lines-table'; tbl.style.marginTop = '10px';
-  tbl.innerHTML = '<thead><tr><th>Email</th><th>' + esc(t('Tên hiển thị')) + '</th><th>' + esc(t('Vai trò')) + '</th><th></th></tr></thead>';
+  tbl.innerHTML = '<thead><tr><th>Email</th><th>' + esc(t('Tên hiển thị')) + '</th><th>' + esc(t('Vai trò')) + '</th><th>' + esc(t('Công ty đối tác')) + '</th><th></th></tr></thead>';
   const tb = document.createElement('tbody');
   rows.forEach(u=>{
     const self = u.Email === usersSelf;
@@ -2347,23 +3633,24 @@ function renderUsers(){
     const tdR = document.createElement('td'); const sel = document.createElement('select');
     ['Admin','Partner','Vendor'].forEach(r=>{ const o = document.createElement('option'); o.value = r; o.textContent = roleLabel(r); if (r === u.Role) o.selected = true; sel.appendChild(o); });
     sel.disabled = self; tdR.appendChild(sel);
+    const tdC = document.createElement('td'); const csel = document.createElement('select'); fillCompanySelect(csel, u.CompanyID || ''); tdC.appendChild(csel);
     const tdA = document.createElement('td'); tdA.style.whiteSpace = 'nowrap';
     const save = document.createElement('button'); save.className = 'btn-primary btn-sm'; save.textContent = t('Lưu');
-    save.onclick = ()=>saveUserRow(u.Email, nameIn.value, sel.value);
+    save.onclick = ()=>saveUserRow(u.Email, nameIn.value, sel.value, csel.value);
     tdA.appendChild(save);
     if (!self){
       const del = document.createElement('button'); del.className = 'btn-ghost btn-sm'; del.style.marginLeft = '4px'; del.textContent = t('Xoá');
       del.onclick = ()=>deleteUserRow(u.Email);
       tdA.appendChild(del);
     }
-    tr.append(tdE, tdN, tdR, tdA); tb.appendChild(tr);
+    tr.append(tdE, tdN, tdR, tdC, tdA); tb.appendChild(tr);
   });
   tbl.appendChild(tb); box.appendChild(tbl);
 }
 
-async function saveUserRow(target, name, role){
+async function saveUserRow(target, name, role, company){
   try{
-    const r = await api({action:'saveUser', email:session.email, token:session.token, target, name, role});
+    const r = await api({action:'saveUser', email:session.email, token:session.token, target, name, role, company});
     if (r.ok){ await loadSettings(); vendorMsg('usersMsg', t('Đã lưu.'), 'ok'); }
     else vendorMsg('usersMsg', te(r.error) || t('Gửi thất bại.'));
   }catch(e){ vendorMsg('usersMsg', t('Lỗi kết nối tới hệ thống.')); }
@@ -2381,7 +3668,7 @@ async function deleteUserRow(target){
 async function addUser(){
   const email = document.getElementById('uEmail').value.trim();
   if (!email){ vendorMsg('usersMsg', t('Vui lòng nhập email.')); return; }
-  await saveUserRow(email, document.getElementById('uName').value, document.getElementById('uRole').value);
+  await saveUserRow(email, document.getElementById('uName').value, document.getElementById('uRole').value, document.getElementById('uCompany').value);
   document.getElementById('uEmail').value = ''; document.getElementById('uName').value = '';
 }
 
@@ -2475,6 +3762,7 @@ async function uploadPrices(){
 }
 
 (function init(){
+  pingBackend();
   document.getElementById('lineItems').dataset.renumber = '1';
   fillIndustry('f', ''); fillIndustry('ed', ''); setTaxHint('');
   document.documentElement.lang = (LANG === 'zh') ? 'zh-CN' : LANG;

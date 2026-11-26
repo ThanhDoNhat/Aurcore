@@ -397,7 +397,7 @@ th{color:var(--muted);font-weight:600;font-size:11.5px;}
 <script>
 // ====== CẤU HÌNH — DÁN WEB APP URL CỦA APPS SCRIPT VÀO ĐÂY (giữ nguyên trong dấu nháy đơn) ======
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbyPNa2N778z_8KA8bHGPW0AToGs3nVRneFCkTgpp2-ceUHxqsWDMUs3kKxIKODlIxRKJg/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbw-zkE2VKN0tBJfanPS5aoG95swxAxNO0V7N88Kdla02q7OOGASgoBUfPu_qs1yPdL9/exec',
   // Để trống = dùng OpenStreetMap (miễn phí). Dán Google Maps API Key vào đây = dùng Google Maps tiếng Việt.
   GOOGLE_MAPS_KEY: '',
   // Đơn vị tiền của rebate Vendor (chỉ là nhãn hiển thị, ví dụ 'USD' hoặc 'VNĐ').
@@ -981,7 +981,11 @@ const DICT = {
  "Dịch vụ AI đang bận, vui lòng thử lại sau.": "The AI service is busy, please try again later.",
  "Dịch vụ AI trả về lỗi, vui lòng thử lại sau.": "The AI service returned an error, please try again later.",
  "AI không trả về gợi ý hợp lệ. Hãy kiểm tra lại nội dung BOQ.": "The AI returned no valid suggestions. Please check the BOQ content.",
- "Các dự án chưa có đơn hàng thực tế (PO/hoá đơn): ": "Projects without an actual order (PO/invoice): "
+ "Các dự án chưa có đơn hàng thực tế (PO/hoá đơn): ": "Projects without an actual order (PO/invoice): ",
+ "Quyền Google Drive": "Google Drive permission",
+ "Đã cấp": "Granted",
+ "Chưa cấp — chạy hàm authorizeAll trong Apps Script, bấm Allow rồi deploy lại (New version).": "Not granted — run the authorizeAll function in Apps Script, click Allow, then redeploy (New version).",
+ "Chưa cấp quyền Google Drive cho hệ thống. Admin cần chạy hàm authorizeAll trong Apps Script và bấm Allow, rồi Deploy → Manage deployments → Edit → New version.": "Google Drive permission has not been granted to the system. An Admin needs to run the authorizeAll function in Apps Script, click Allow, then Deploy → Manage deployments → Edit → New version."
 },
  zh: {
  "Đăng ký dự án & theo dõi phê duyệt — xin chào": "项目报备与审批跟踪 — 您好",
@@ -1533,7 +1537,11 @@ const DICT = {
  "Dịch vụ AI đang bận, vui lòng thử lại sau.": "AI 服务繁忙，请稍后再试。",
  "Dịch vụ AI trả về lỗi, vui lòng thử lại sau.": "AI 服务返回错误，请稍后再试。",
  "AI không trả về gợi ý hợp lệ. Hãy kiểm tra lại nội dung BOQ.": "AI 未返回有效建议，请检查 BOQ 内容。",
- "Các dự án chưa có đơn hàng thực tế (PO/hoá đơn): ": "以下项目尚无实际订单（PO/发票）："
+ "Các dự án chưa có đơn hàng thực tế (PO/hoá đơn): ": "以下项目尚无实际订单（PO/发票）：",
+ "Quyền Google Drive": "Google Drive 权限",
+ "Đã cấp": "已授权",
+ "Chưa cấp — chạy hàm authorizeAll trong Apps Script, bấm Allow rồi deploy lại (New version).": "未授权 — 请在 Apps Script 中运行 authorizeAll 函数，点击 Allow，然后重新部署（New version）。",
+ "Chưa cấp quyền Google Drive cho hệ thống. Admin cần chạy hàm authorizeAll trong Apps Script và bấm Allow, rồi Deploy → Manage deployments → Edit → New version.": "系统尚未获得 Google Drive 权限。Admin 需要在 Apps Script 中运行 authorizeAll 函数并点击 Allow，然后 Deploy → Manage deployments → Edit → New version。"
 }
 };
 
@@ -1648,7 +1656,7 @@ function showConfigWarningIfNeeded(){
 }
 
 // ====== ĐĂNG NHẬP 2 BƯỚC (Admin), PHIÊN BẢN, SỨC KHOẺ HỆ THỐNG, BẢO MẬT TÀI KHOẢN ======
-const FRONTEND_VERSION = 'v29', EXPECTED_BACKEND = 'v29-ai-boq';
+const FRONTEND_VERSION = 'v30', EXPECTED_BACKEND = 'v30-drive-guard';
 let backendVersion = '', loginTicket = null, companiesRows = [];
 
 function H(html){ const d = document.createElement('div'); d.innerHTML = String(html).trim(); return d.firstElementChild; }
@@ -1714,6 +1722,7 @@ async function loadHealth(){
     backendVersion = r.version; updateVerFooter();
     const rows = [];
     rows.push([t('Phiên bản máy chủ'), r.version + (r.version !== EXPECTED_BACKEND ? ' ⚠️' : ' ✓')]);
+    rows.push([t('Quyền Google Drive'), r.drive ? t('Đã cấp') + ' ✓' : t('Chưa cấp — chạy hàm authorizeAll trong Apps Script, bấm Allow rồi deploy lại (New version).') + ' ⚠️']);
     rows.push([t('Nhà cung cấp email'), r.provider === 'MAILGUN' ? 'Mailgun' : 'Gmail (Apps Script)']);
     rows.push([t('Hạn mức email còn lại hôm nay'), r.quota === null ? t('Không giới hạn kiểu Gmail') : (r.quota + (r.quota < 20 ? ' ⚠️' : ''))]);
     rows.push([t('Email đang chờ gửi lại'), String(r.queue) + (r.queue ? ' ⚠️' : '')]);
